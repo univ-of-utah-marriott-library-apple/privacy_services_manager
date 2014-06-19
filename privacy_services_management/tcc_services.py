@@ -1,9 +1,17 @@
 import os
 import sqlite3
 
-class TCCEdit:
-    '''A class to help with editing the TCC databases. This ought to be used in
-    a 'with' statement to ensure proper closing of connections! e.g.
+# The services have particular names and databases.
+# The tuplet is (Service Name, TCC database, Darwin version introduced)
+available_services = {
+    'accessibility': ('kTCCServiceAccessibility', 'root',  13),
+    'contacts':      ('kTCCServiceAddressBook',   'local', 12),
+    'icloud':        ('kTCCServiceUbiquity',      'local', 12)
+}
+
+class TCCEdit(object):
+    '''A class to help with editing the TCC databases. This ought to be used
+    in a 'with' statement to ensure proper closing of connections! e.g.
 
     with TCCEdit() as e:
         # do some stuff to the database
@@ -25,7 +33,7 @@ class TCCEdit:
         except:
             raise RuntimeError("Could not acquire the OS X version.")
         if version < 12:
-            raise RuntimeError("There is no TCC functionality on this version of OS X.")
+            raise RuntimeError("No TCC functionality on this version of OS X.")
         self.version = version
 
         # Establish database locations.
@@ -33,10 +41,14 @@ class TCCEdit:
             # This script supports the use of the User Template provided by
             # Apple, but only root may modify anything therein.
             if not os.geteuid() == 0:
-                raise ValueError("Only the root user may modify the User Template.")
+                raise ValueError("Only root user may modify the User Template.")
             self.local_path = '/System/Library/User Template/' + lang + '.lproj/Library/Application Support/com.apple.TCC/TCC.db'
         else:
-            self.local_path = os.path.expanduser('~' + user + '/Library/Application Support/com.apple.TCC/TCC.db')
+            self.local_path = os.path.expanduser(
+                '~' +
+                user +
+                '/Library/Application Support/com.apple.TCC/TCC.db'
+            )
         self.root_path = '/Library/Application Support/com.apple.TCC/TCC.db'
 
         # Check the user didn't supply a bad username.
@@ -45,7 +57,11 @@ class TCCEdit:
             # system. Maybe the user exists but isn't registered as a user?
             # Try looking in /Users/ just to see:
             if os.path.isdir('/Users/' + user):
-                self.local_path = '/Users/' + user + '/Library/Application Support/com.apple.TCC/TCC.db'
+                self.local_path = (
+                    '/Users/' +
+                    user +
+                    '/Library/Application Support/com.apple.TCC/TCC.db'
+                )
             else:
                 raise ValueError("Invalid username supplied: " + user)
 
@@ -57,7 +73,8 @@ class TCCEdit:
 
         # Check there is write access to user's local TCC database.
         if not os.access(self.local_path, os.W_OK):
-            raise ValueError("You do not have permission to modify " + user + "'s TCC database.")
+            raise ValueError("You do not have permission to modify " + user +
+                             "'s TCC database.")
 
         # Create the connections.
         # Only root may modify the global TCC database.
@@ -66,13 +83,7 @@ class TCCEdit:
         else:
             self.root = None
         self.local = sqlite3.connect(self.local_path)
-
-        # The services have particular names and databases.
-        # The tuplet is (Service Name, TCC database, Darwin version introduced)
-        self.services = {}
-        self.services['accessibility'] = ('kTCCServiceAccessibility', self.root, 13)
-        self.services['contacts'] = ('kTCCServiceAddressBook', self.local, 12)
-        self.services['icloud'] = ('kTCCServiceUbiquity', self.local, 12)
+        self.connections = {'root': self.root, 'local': self.local}
 
     def __enter__(self):
         return self
@@ -89,15 +100,16 @@ class TCCEdit:
 
         # Check that the service is known to the program; I do not intend to
         # support unsupported services here.
-        if not service in self.services.keys():
+        if not service in available_services.keys():
             raise ValueError("Invalid service provided: " + service)
 
         # Version checking for the current service.
-        if self.version < self.services[service][2]:
-            raise RuntimeError("Service '" + service + "' does not exist on this version of OS X.")
+        if self.version < available_services[service][2]:
+            raise RuntimeError("Service '" + service +
+                               "' does not exist on this version of OS X.")
 
         # Establish a connection with the TCC database.
-        connection = self.services[service][1]
+        connection = self.connections[available_services[service][1]]
 
         # Clearly you tried to modify something you weren't supposed to!
         # For shame.
@@ -113,11 +125,11 @@ class TCCEdit:
         # cannot be given in previous versions without incurring errors).
         if self.version == 12:
             c.execute("INSERT or REPLACE into access values("
-                        + "'" + self.services[service][0] + "', "
+                        + "'" + available_services[service][0] + "', "
                         + "'" + bid + "', 0, 1, 0)")
         else:
             c.execute("INSERT or REPLACE into access values("
-                        + "'" + self.services[service][0] + "', "
+                        + "'" + available_services[service][0] + "', "
                         + "'" + bid + "', 0, 1, 0, NULL)")
         connection.commit()
 
@@ -132,11 +144,11 @@ class TCCEdit:
         service = service.lower()
 
         # Check the service is recognized.
-        if not service in self.services.keys():
+        if not service in available_services.keys():
             raise ValueError("Invalid service provided: " + service)
 
         # Establish a connection with the TCC database.
-        connection = self.services[service][1]
+        connection = self.connections[available_services[service][1]]
 
         # Validate that the connection was successful.
         if not connection:
@@ -146,7 +158,7 @@ class TCCEdit:
 
         # Perform the deletion.
         c.execute("DELETE FROM access WHERE service IS "
-                    + "'" + self.services[service][0] + "'"
+                    + "'" + available_services[service][0] + "'"
                     + " AND client IS '" + bid + "'")
         connection.commit()
 
@@ -173,32 +185,40 @@ class TCCEdit:
 
         # In OS X 10.9, Apple changed the formatting for this table a bit.
         if self.version == 12:
-            c.execute('''CREATE TABLE access
-                     (service TEXT NOT NULL,
-                     client TEXT NOT NULL,
-                     client_type INTEGER NOT NULL,
-                     allowed INTEGER NOT NULL,
-                     prompt_count INTEGER NOT NULL,
-                     CONSTRAINT key PRIMARY KEY (service, client, client_type))''')
+            c.execute('''
+                CREATE TABLE access
+                (service TEXT NOT NULL,
+                client TEXT NOT NULL,
+                client_type INTEGER NOT NULL,
+                allowed INTEGER NOT NULL,
+                prompt_count INTEGER NOT NULL,
+                CONSTRAINT key PRIMARY KEY (service, client, client_type))'''
+            )
 
         else:
-            c.execute('''CREATE TABLE access
-                     (service TEXT NOT NULL,
-                     client TEXT NOT NULL,
-                     client_type INTEGER NOT NULL,
-                     allowed INTEGER NOT NULL,
-                     prompt_count INTEGER NOT NULL,
-                     csreq BLOB,
-                     CONSTRAINT key PRIMARY KEY (service, client, client_type))''')
+            c.execute('''
+                CREATE TABLE access
+                (service TEXT NOT NULL,
+                client TEXT NOT NULL,
+                client_type INTEGER NOT NULL,
+                allowed INTEGER NOT NULL,
+                prompt_count INTEGER NOT NULL,
+                csreq BLOB,
+                CONSTRAINT key PRIMARY KEY (service, client, client_type))'''
+            )
 
-        c.execute('''CREATE TABLE access_times
-                     (service TEXT NOT NULL,
-                     client TEXT NOT NULL,
-                     client_type INTEGER NOT NULL,
-                     last_used_time INTEGER NOT NULL,
-                     CONSTRAINT key PRIMARY KEY (service, client, client_type))''')
-        c.execute('''CREATE TABLE access_overrides
-                     (service TEXT PRIMARY KEY NOT NULL)''')
+        c.execute('''
+                CREATE TABLE access_times
+                (service TEXT NOT NULL,
+                client TEXT NOT NULL,
+                client_type INTEGER NOT NULL,
+                last_used_time INTEGER NOT NULL,
+                CONSTRAINT key PRIMARY KEY (service, client, client_type))'''
+        )
+        c.execute('''
+                CREATE TABLE access_overrides
+                (service TEXT PRIMARY KEY NOT NULL)'''
+        )
 
         connection.commit()
         connection.close()
@@ -213,3 +233,24 @@ class TCCEdit:
         if self.root:
             self.root.close()
         self.local.close()
+
+class AccessibilityEdit(TCCEdit):
+    def insert(self, bid):
+        super(AccessibilityEdit, self).insert('accessibility', bid)
+
+    def remove(self, bid):
+        super(AccessibilityEdit, self).remove('accessibility', bid)
+
+class ContactsEdit(TCCEdit):
+    def insert(self, bid):
+        super(ContactsEdit, self).insert('contacts', bid)
+
+    def remove(self, bid):
+        super(ContactsEdit, self).remove('contacts', bid)
+
+class UbiquityEdit(TCCEdit):
+    def insert(self, bid):
+        super(UbiquityEdit, self).insert('icloud', bid)
+
+    def remove(self, bid):
+        super(UbiquityEdit, self).remove('icloud', bid)
