@@ -27,7 +27,7 @@ class LSEdit(object):
         app = AppInfo(bid)
 
         requirement = (
-            "identifier \"" + app.bid _ "\" and anchor " +
+            "identifier \"" + app.bid + "\" and anchor " +
             app.bid.split('.')[1]
         )
 

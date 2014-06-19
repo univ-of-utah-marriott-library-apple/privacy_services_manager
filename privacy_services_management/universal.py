@@ -1,26 +1,18 @@
 import location_services
 import tcc_services
 
+available_services = tcc_services.available_services.keys() + ['location']
+
 def get_editor(service, user='', template=False, lang='English'):
-    if service == 'accessibility':
-        return tcc_services.AccessibilityEdit(
-            user     = user,
-            template = template,
-            lang     = lang
-        )
-    else if service == 'contacts':
-        return tcc_services.ContactsEdit(
-            user     = user,
-            template = template,
-            lang     = lang
-        )
-    else if service == 'icloud':
-        return tcc_services.UbiquityEdit(
-            user     = user,
-            template = template,
-            lang     = lang
-        )
-    else if service == 'location':
-        return location_services.LSEdit()
-    else:
+    if service not in available_services:
         raise ValueError("Invalid service: " + str(service))
+    else:
+        if service in tcc_services.available_services.keys():
+            return tcc_services.TCCEdit(
+                service  = service,
+                user     = user,
+                template = template,
+                lang     = lang
+            )
+        else:
+            return location_services.LSEdit()

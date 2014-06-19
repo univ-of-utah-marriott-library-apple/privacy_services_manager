@@ -1,6 +1,13 @@
 import os
 import sqlite3
 
+try:
+    from management_tools.app_info import AppInfo
+except ImportError as e:
+    print "You need the 'Management Tools' module to be installed first."
+    print "https://github.com/univ-of-utah-marriott-library-apple/management_tools"
+    raise e
+
 # The services have particular names and databases.
 # The tuplet is (Service Name, TCC database, Darwin version introduced)
 available_services = {
@@ -20,7 +27,10 @@ class TCCEdit(object):
     bar(baz)
     '''
 
-    def __init__(self, user='', template=False, lang='English'):
+    def __init__(self, service=None, user='', template=False, lang='English'):
+        # If a service is given, stick with that.
+        self.service = service
+
         # If no user is specified, use the current user instead.
         if not user:
             import getpass
@@ -92,12 +102,22 @@ class TCCEdit(object):
     def __enter__(self):
         return self
 
-    def insert(self, service, bid):
-        '''Adds 'bid' to the specified service.
+    def insert(self, app, service=None):
+        '''Adds 'app' to the specified service.
 
         service - a service name to add to
         bid     - a bundle identifier
         '''
+
+        # Validate that they didn't pass us something dumb.
+        if app is None:
+            return
+        else:
+            bid = AppInfo(app).bid
+        if service is None and self.service:
+            service = self.service
+        else:
+            return
 
         # Don't beat up the user for doing something like "AcCeSsIbILITy".
         service = service.lower()
@@ -137,12 +157,21 @@ class TCCEdit(object):
                         + "'" + bid + "', 0, 1, 0, NULL)")
         connection.commit()
 
-    def remove(self, service, bid):
-        '''Removes 'bid' from the specified service.
+    def remove(self, app, service=None):
+        '''Removes 'app' from the specified service.
 
         service - a service name to add to
         bid     - a bundle identifier
         '''
+
+        if app is None:
+            return
+        else:
+            bid = AppInfo(app).bid
+        if service is None and self.service:
+            service = self.service
+        else:
+            return
 
         # Be nice to the user.
         service = service.lower()
@@ -182,10 +211,14 @@ class TCCEdit(object):
         c = connection.cursor()
 
         # Create the tables.
-        c.execute('''CREATE TABLE admin
-                     (key TEXT PRIMARY KEY NOT NULL, value INTEGER NOT NULL)''')
+        c.execute('''
+                CREATE TABLE admin
+                (key TEXT PRIMARY KEY NOT NULL, value INTEGER NOT NULL)'''
+        )
 
-        c.execute("INSERT INTO admin VALUES ('version', 7)")
+        c.execute('''
+                INSERT INTO admin VALUES ('version', 7)'''
+        )
 
         # In OS X 10.9, Apple changed the formatting for this table a bit.
         if self.version == 12:
@@ -237,24 +270,3 @@ class TCCEdit(object):
         if self.root:
             self.root.close()
         self.local.close()
-
-class AccessibilityEdit(TCCEdit):
-    def insert(self, bid):
-        super(AccessibilityEdit, self).insert('accessibility', bid)
-
-    def remove(self, bid):
-        super(AccessibilityEdit, self).remove('accessibility', bid)
-
-class ContactsEdit(TCCEdit):
-    def insert(self, bid):
-        super(ContactsEdit, self).insert('contacts', bid)
-
-    def remove(self, bid):
-        super(ContactsEdit, self).remove('contacts', bid)
-
-class UbiquityEdit(TCCEdit):
-    def insert(self, bid):
-        super(UbiquityEdit, self).insert('icloud', bid)
-
-    def remove(self, bid):
-        super(UbiquityEdit, self).remove('icloud', bid)
