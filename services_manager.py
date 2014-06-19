@@ -49,6 +49,9 @@ class ArgumentParser(argparse.ArgumentParser):
 def parse_options():
     '''Parse the command-line options.'''
 
+    available_services = psm.tcc_services.available_services.keys()
+    available_services += ['location']
+
     parser = ArgumentParser(add_help=False)
     parser.add_argument('-h', '--help', action='store_true')
     parser.add_argument('-v', '--version', action='store_true')
@@ -57,9 +60,9 @@ def parse_options():
     parser.add_argument('-u', '--user')
     parser.add_argument('--template', action='store_true')
     parser.add_argument('--language', default='English')
-    parser.add_argument('action', nargs='?', choices=['add', 'remove'], default=None)
-    parser.add_argument('service', nargs='?',
-                        choices=psm.tcc_services.available_services.keys() + ['location'])
+    parser.add_argument('action', nargs='?',
+                        choices=['add', 'remove'], default=None)
+    parser.add_argument('service', nargs='?', available_services)
     parser.add_argument('apps', nargs=argparse.REMAINDER)
     args = parser.parse_args()
 

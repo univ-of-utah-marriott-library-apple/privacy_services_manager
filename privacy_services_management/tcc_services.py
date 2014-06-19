@@ -42,7 +42,11 @@ class TCCEdit(object):
             # Apple, but only root may modify anything therein.
             if not os.geteuid() == 0:
                 raise ValueError("Only root user may modify the User Template.")
-            self.local_path = '/System/Library/User Template/' + lang + '.lproj/Library/Application Support/com.apple.TCC/TCC.db'
+            self.local_path = (
+                '/System/Library/User Template/' +
+                lang +
+                '.lproj/Library/Application Support/com.apple.TCC/TCC.db'
+            )
         else:
             self.local_path = os.path.expanduser(
                 '~' +
