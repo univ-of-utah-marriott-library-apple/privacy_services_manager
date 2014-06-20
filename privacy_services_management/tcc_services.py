@@ -105,8 +105,8 @@ class TCCEdit(object):
     def insert(self, app, service=None):
         '''Adds 'app' to the specified service.
 
+        app     - an application identifier
         service - a service name to add to
-        bid     - a bundle identifier
         '''
 
         # Validate that they didn't pass us something dumb.
@@ -147,21 +147,30 @@ class TCCEdit(object):
         # useful since you can just give it the value "NULL" with no ill
         # effects, but it is necessary in Darwin versions 13 and greater (yet it
         # cannot be given in previous versions without incurring errors).
+        values = (available_services[service][0], bid)
         if self.version == 12:
-            c.execute("INSERT or REPLACE into access values("
-                        + "'" + available_services[service][0] + "', "
-                        + "'" + bid + "', 0, 1, 0)")
+            c.execute(
+                'INSERT or REPLACE into access values(?, ?, 0, 1, 0)',
+                values
+            )
+            # c.execute("INSERT or REPLACE into access values("
+            #             + "'" + available_services[service][0] + "', "
+            #             + "'" + bid + "', 0, 1, 0)")
         else:
-            c.execute("INSERT or REPLACE into access values("
-                        + "'" + available_services[service][0] + "', "
-                        + "'" + bid + "', 0, 1, 0, NULL)")
+            c.execute(
+                'INSERT or REPLACE into access values(?, ?, 0, 1, 0, NULL)',
+                values
+            )
+            # c.execute("INSERT or REPLACE into access values("
+            #             + "'" + available_services[service][0] + "', "
+            #             + "'" + bid + "', 0, 1, 0, NULL)")
         connection.commit()
 
     def remove(self, app, service=None):
         '''Removes 'app' from the specified service.
 
-        service - a service name to add to
-        bid     - a bundle identifier
+        app     - an application identifier
+        service - a service name to remove from
         '''
 
         if app is None:
@@ -190,9 +199,67 @@ class TCCEdit(object):
         c = connection.cursor()
 
         # Perform the deletion.
-        c.execute("DELETE FROM access WHERE service IS "
-                    + "'" + available_services[service][0] + "'"
-                    + " AND client IS '" + bid + "'")
+        values = (available_services[service][0], bid)
+        c.execute('DELETE FROM access WHERE service IS ? AND client IS ?',
+                  values)
+        # c.execute("DELETE FROM access WHERE service IS "
+        #             + "'" + available_services[service][0] + "'"
+        #             + " AND client IS '" + bid + "'")
+        connection.commit()
+
+    def disable(self, app, service=None):
+        '''Disables 'app' for the specified service, but leaves the entry in the
+        TCC database.
+
+        app     - an application identifier
+        service - a service name to disable within
+        '''
+
+        if app is None:
+            return
+        else:
+            bid = AppInfo(app).bid
+        if service is None and self.service:
+            service = self.service
+        else:
+            return
+
+        # Be nice to the user.
+        service = service.lower()
+
+        # Check the service is recognized.
+        if not service in available_services.keys():
+            raise ValueError("Invalid service provided: " + service)
+
+        # Establish a connection with the TCC database.
+        connection = self.connections[available_services[service][1]]
+
+        # Validate that the connection was successful.
+        if not connection:
+            raise ValueError("Must be root to modify this service!")
+
+        c = connection.cursor()
+
+        # Disable the application for the given service.
+        # The 'prompt_count' must be 1 or else the system will ask the user
+        # anyway. This is the only time it seems to really matter.
+        values = (available_services[service][0], bid)
+        c.execute(
+            'SELECT count(*) FROM access WHERE service IS ? and client IS ?',
+            values
+        )
+        count = c.fetchone()[0]
+        if count:
+            if self.version == 12:
+                c.execute(
+                    'INSERT or REPLACE into access values(?, ?, 0, 0, 1)',
+                    values
+                )
+            else:
+                c.execute(
+                    'INSERT or REPLACE into access values(?, ?, 0, 0, 1, NULL)',
+                    values
+                )
         connection.commit()
 
     def __create(self, path):

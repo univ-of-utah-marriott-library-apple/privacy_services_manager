@@ -13,7 +13,7 @@ setup(
     package_dir={'privacy_services_management': 'privacy_services_management'},
     scripts=['privacy_services_manager.py'],
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Stable',
         'Environment :: Console',
         'Environment :: MacOS X',
         'Intended Audience :: Information Technology',
