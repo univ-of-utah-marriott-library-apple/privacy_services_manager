@@ -108,7 +108,72 @@ usage: {name} [-hvn] [-l log] [-u user]
          [--template] [--language] action service applications
 
 Modify access to the various privacy services of OS X, such as Contacts, iCloud,
-Accessibility, and Locations.\
+Accessibility, and Locations.
+
+    -h, --help
+        Prints this help message and quits.
+    -v, --version
+        Prints the version information and quits.
+    -n, --no-log
+        Prevent logs from being written to files.
+        (All information that would be logged is redirected to stdio.)
+    --template
+        Modify access only for Apple's User Template. Only applies to certain
+        services.
+
+    -l log, --log-dest log
+        Redirect log output to 'log'.
+    -u user, --user user
+        Modify access only for 'user'. Only applies to certain services.
+    --language lang
+        Only functions when used with --template. Specifies which User Template
+        is modified.
+
+ACTION
+    add
+        Adds applications to the service and enable them.
+    enable
+        Ensures applications are added to the service and enabled.
+        (This is effectively the same as 'add'.)
+    remove
+        Removes all traces of the applications for the service.
+    disable
+        Deauthorizes the applications from the service but leaves their entries
+        in place. This is useful if you want to explicitly prevent an
+        application from using a service.
+
+SERVICE
+    contacts
+        Access to the AddressBook feature. Used by applications that want to
+        know who you know.
+    accessibility
+        Permission to modify system-level settings. Applications that integrate
+        with your desktop require accessibility access.
+        NOTE: Must be modified by root.
+    icloud
+        Permission to access iCloud storage? Unsure exactly - currently this is
+        only used by Apple-built applications.
+    location
+        Modifies the Location Services system. Any application that wants to
+        know your physical locations (e.g. Maps) will use this.
+        NOTE: Must be modified by root.
+
+APPLICATIONS
+    Application names can be specified in a few ways, assuming the applications
+    were produced properly:
+
+    1. Short name
+            If Spotlight can find something from a string, it'll work here. I
+            don't really recommend depending on it in deployment environments,
+            though.
+                e.g. safari
+    2. Bundle identifier
+            A (supposedly) unique string in reverse-DNS format which identifies
+            a particular application.
+                e.g. com.apple.Safari
+    3. Bundle path location
+            The absolute path to an application's .app bundle.
+                e.g. /Applications/Safari.app\
 '''.format(name=options['name']))
 
 class ArgumentParser(argparse.ArgumentParser):
