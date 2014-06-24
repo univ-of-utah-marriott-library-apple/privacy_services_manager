@@ -12,6 +12,13 @@ A single management utility to administer Location Services, Contacts requests, 
   * [Actions](#actions)
   * [Applications](#applications)
 * [Service Specifics](#service-specifics) - some odds and ends
+* [Technical](#technical) - information on how it all works
+  * [TCC Services](#tcc-services)
+  * [Location Services](#location-services)
+
+## Download
+
+[Download the latest installer here!](../../releases/)
 
 ## Purpose
 
