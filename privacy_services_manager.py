@@ -127,8 +127,11 @@ Accessibility, and Locations.
         Modify access only for 'user'. Only applies to certain services.
     --language lang
         Only functions when used with --template. Specifies which User Template
-        is modified.
+        is modified.\
+'''.format(name=options['name']))
 
+    if not short:
+        print('''
 ACTION
     add
         Adds applications to the service and enable them.
@@ -174,7 +177,7 @@ APPLICATIONS
     3. Bundle path location
             The absolute path to an application's .app bundle.
                 e.g. /Applications/Safari.app\
-'''.format(name=options['name']))
+''')
 
 class ArgumentParser(argparse.ArgumentParser):
     '''I like my own style of error-handling, thank you.'''
