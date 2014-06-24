@@ -26,13 +26,14 @@ def main(apps, service, action, user, template, language, log, log_dest):
             logger = loggers.file_logger(options['name'])
 
     if action == 'add' or action == 'enable':
-        try:
             with psm.universal.get_editor(service, user, template, language) as e:
+                if len(apps) == 0:
+                    e.insert(None)
                 for app in apps:
                     try:
                         e.insert(app)
                     except:
-                        logger.error(sys.exc_info()[1].message)
+                        logger.error(sys.exc_info()[0].__name__ + ": " + sys.exc_info()[1].message)
                         continue
                     if app:
                         entry = "Added '" + app + "' to service '" + service + "'"
@@ -43,53 +44,50 @@ def main(apps, service, action, user, template, language, log, log_dest):
                         else:
                             entry += "."
                         logger.info(entry)
-        except:
-            logger.error(sys.exc_info()[1].message)
-            return
     elif action == 'remove':
-        try:
-            with psm.universal.get_editor(service, user, template, language) as e:
-                for app in apps:
-                    try:
-                        e.remove(app)
-                    except:
-                        logger.error(sys.exc_info()[1].message)
-                        continue
-                    if app:
-                        entry = ("Removed '" + app + "' from service '" +
-                                 service + "'")
-                        if user:
-                            entry += " for user '" + user + "'."
-                        elif template:
-                            entry += " for the User Template."
-                        else:
-                            entry += "."
-                        logger.info(entry)
-        except:
-            logger.error(sys.exc_info()[1].message)
-            return
+        with psm.universal.get_editor(service, user, template, language) as e:
+            if len(apps) == 0:
+                e.remove(None)
+            for app in apps:
+                try:
+                    e.remove(app)
+                except:
+                    logger.error(sys.exc_info()[0].__name__ + ": " + sys.exc_info()[1].message)
+                    continue
+                if app:
+                    entry = ("Removed '" + app + "' from service '" +
+                             service + "'")
+                    if user:
+                        entry += " for user '" + user + "'."
+                    elif template:
+                        entry += " for the User Template."
+                    else:
+                        entry += "."
+                    logger.info(entry)
     elif action == 'disable':
-        try:
-            with psm.universal.get_editor(service, user, template, language) as e:
-                for app in apps:
-                    try:
-                        e.disable(app)
-                    except:
-                        logger.error(sys.exc_info()[1].message)
-                        continue
-                    if app:
-                        entry = ("Disabled '" + app + "' from service '" +
-                                 service + "'")
-                        if user:
-                            entry += " for user '" + user + "'."
-                        elif template:
-                            entry += " for the User Template."
-                        else:
-                            entry += "."
-                        logger.info(entry)
-        except:
-            logger.error(sys.exc_info()[1].message)
-            return
+        print "Disable"
+        with psm.universal.get_editor(service, user, template, language) as e:
+            print "Have editor"
+            if len(apps) == 0:
+                print "Trying!"
+                e.disable(None)
+            for app in apps:
+                print "Executing for loop!"
+                try:
+                    e.disable(app)
+                except:
+                    logger.error(sys.exc_info()[0].__name__ + ": " + sys.exc_info()[1].message)
+                    continue
+                if app:
+                    entry = ("Disabled '" + app + "' from service '" +
+                             service + "'")
+                    if user:
+                        entry += " for user '" + user + "'."
+                    elif template:
+                        entry += " for the User Template."
+                    else:
+                        entry += "."
+                    logger.info(entry)
 
 def version():
     '''Prints the version information.'''
@@ -203,7 +201,7 @@ if __name__ == '__main__':
                         default=None)
     parser.add_argument('service', nargs='?',
                         choices=psm.universal.available_services)
-    parser.add_argument('apps', nargs=argparse.REMAINDER, const=None)
+    parser.add_argument('apps', nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
     if args.help:
@@ -218,7 +216,7 @@ if __name__ == '__main__':
             print("Error: Must specify a service to modify.")
             sys.exit(1)
         main(
-            apps = args.apps if args.apps else [None],
+            apps = args.apps if args.apps else [],
             service = args.service,
             action = args.action,
             user = args.user,
@@ -227,3 +225,6 @@ if __name__ == '__main__':
             log = not args.no_log,
             log_dest = args.log_dest
         )
+        # try:
+        # except:
+        #     logger.error(sys.exc_info()[0].__name__ + ": " + sys.exc_info()[1].message)

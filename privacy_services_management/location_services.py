@@ -137,21 +137,8 @@ def enable_global(enable):
         str(uuid)
     )
 
-    defaults = [
-        '/usr/bin/defaults',
-        'write',
-        ls_plist,
-        'LocationServicesEnabled',
-        '-int',
-        value
-    ]
-
-    result = subprocess.call(
-        defaults,
-        stderr=subprocess.STDOUT,
-        stdout=open(os.devnull, 'w')
-    )
-    return result
+    ls_plist = PlistEditor(ls_plist)
+    ls_plist.write("LocationServicesEnabled", value, "int")
 
 def get_uuid():
     '''Acquire the UUID of the hardware.'''
@@ -169,7 +156,7 @@ def get_uuid():
     if len(uuid) != 1:
         raise RuntimeError("Could not find a unique UUID.")
 
-    return uuid[0].lstrip().split('= "')[1]
+    return uuid[0].lstrip().split('= "')[1].rstrip('"')
 
 def enable():
     '''Fix permissions for the _locationd user, then load the locationd
