@@ -5,6 +5,10 @@ A single management utility to administer Location Services, Contacts requests, 
 
 ## Contents
 
+* [Download](#download) - get the .pkg
+* [System Requirements](#system-requirements) - what you need
+* [Contact](#contact) - how to reach us
+* [Uninstall](#uninstall) - removal of Privacy Services Manager
 * [Purpose](#purpose) - what is this command for?
 * [History](#history) - how it came to be
 * [Usage](#usage) - details of invocation
@@ -19,6 +23,24 @@ A single management utility to administer Location Services, Contacts requests, 
 ## Download
 
 [Download the latest installer here!](../../releases/)
+
+## System Requirements
+
+Privacy Services Manager will only have any effect on Mac OS X 10.8 and newer; none of the systems it modifies were in place prior to that version. Additionally, the **Accessibility** and **Location Services** systems were not added until OS X 10.9. Attempting to modify them on a 10.8 computer will not have any adverse effects; there simply will not be any effects at all.
+
+## Contact
+
+If you have any comments, questions, or other input, either [file an issue](../../issues) or [send an email to us](mailto:mlib-its-mac-github@lists.utah.edu). Thanks!
+
+## Uninstall
+
+To remove Privacy Services Manager from your system, simply run the included uninstallation script:
+
+```
+$ sudo /usr/local/bin/uninstall-privacy-services-manager-VERSION.sh
+```
+
+This will delete all libraries and scripts installed, as well as unregister the package from your system's receipts database.
 
 ## Purpose
 
