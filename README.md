@@ -22,11 +22,15 @@ A single management utility to administer Location Services, Contacts requests, 
 
 ## Download
 
-[Download the latest installer here!](../../releases/)
+This project requires [Management Tools](https://github.com/univ-of-utah-marriott-library-apple/management_tools), so install that first.
+
+[Then download the latest installer for Privacy Services Manager here!](../../releases/)
 
 ## System Requirements
 
 Privacy Services Manager will only have any effect on Mac OS X 10.8 and newer; none of the systems it modifies were in place prior to that version. Additionally, the **Accessibility** and **Ubiquity (iCloud)** systems were not added until OS X 10.9. Attempting to modify them on a 10.8 computer will not have any adverse effects; there simply will not be any effects at all.
+
+Additionally, this project requires [Management Tools](https://github.com/univ-of-utah-marriott-library-apple/management_tools) to function properly.
 
 ## Contact
 
@@ -90,6 +94,16 @@ https://github.com/univ-of-utah-marriott-library-apple/management_tools
 3. By shortname as it would be found by Spotlight, e.g. `safari`, `myapp`
 
 Personally I would stick to either **1** or **2** for scripting purposes, since those are specific and verifiable. Use **3** informally in single-time invocations for sake of ease, though.
+
+To find an application's bundle identifier or bundle path, use the `app_lookup.py` script in the Management Tools suite. To use it, simply do:
+
+```
+$ app_lookup.py application
+```
+
+where "application" can be the short name of the app (such as "Safari" or "TextEdit"). This will return the application's identifiable short name, bundle identifier, and some paths to a few aspects of the application.
+
+If you want to know more about finding bundle identifiers yourself, look at the [relevant section of the Management Tools README](https://github.com/univ-of-utah-marriott-library-apple/management_tools/blob/master/README.md#finding-bundle-identifiers-manually).
 
 ## Service Specifics
 
