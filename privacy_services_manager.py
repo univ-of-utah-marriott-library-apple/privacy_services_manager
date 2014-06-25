@@ -22,17 +22,8 @@ def main(apps, service, action, user, template, language):
                 if len(apps) == 0:
                     e.insert(None)
                 for app in apps:
-                    try:
-                        e.insert(app)
-                    except:
-                        message = (
-                            str(sys.exc_info()[0].__name__) + ": " +
-                            str(sys.exc_info()[1].message)
-                        )
-                        print(message)
-                        logger.error(message)
-                        continue
                     if app:
+                        e.insert(app)
                         entry = "Added '" + app + "' to service '" + service + "'"
                         if user:
                             entry += " for user '" + user + "'."
@@ -46,17 +37,8 @@ def main(apps, service, action, user, template, language):
             if len(apps) == 0:
                 e.remove(None)
             for app in apps:
-                try:
-                    e.remove(app)
-                except:
-                    message = (
-                        str(sys.exc_info()[0].__name__) + ": " +
-                        str(sys.exc_info()[1].message)
-                    )
-                    print(message)
-                    logger.error(message)
-                    continue
                 if app:
+                    e.remove(app)
                     entry = ("Removed '" + app + "' from service '" +
                              service + "'")
                     if user:
@@ -71,17 +53,8 @@ def main(apps, service, action, user, template, language):
             if len(apps) == 0:
                 e.disable(None)
             for app in apps:
-                try:
-                    e.disable(app)
-                except:
-                    message = (
-                        str(sys.exc_info()[0].__name__) + ": " +
-                        str(sys.exc_info()[1].message)
-                    )
-                    print(message)
-                    logger.error(message)
-                    continue
                 if app:
+                    e.disable(app)
                     entry = ("Disabled '" + app + "' from service '" +
                              service + "'")
                     if user:
