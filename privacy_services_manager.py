@@ -25,7 +25,12 @@ def main(apps, service, action, user, template, language):
                     try:
                         e.insert(app)
                     except:
-                        logger.error(sys.exc_info()[0].__name__ + ": " + sys.exc_info()[1].message)
+                        message = (
+                            str(sys.exc_info()[0].__name__) + ": " +
+                            str(sys.exc_info()[1].message)
+                        )
+                        print(message)
+                        logger.error(message)
                         continue
                     if app:
                         entry = "Added '" + app + "' to service '" + service + "'"
@@ -44,7 +49,12 @@ def main(apps, service, action, user, template, language):
                 try:
                     e.remove(app)
                 except:
-                    logger.error(sys.exc_info()[0].__name__ + ": " + sys.exc_info()[1].message)
+                    message = (
+                        str(sys.exc_info()[0].__name__) + ": " +
+                        str(sys.exc_info()[1].message)
+                    )
+                    print(message)
+                    logger.error(message)
                     continue
                 if app:
                     entry = ("Removed '" + app + "' from service '" +
@@ -64,7 +74,12 @@ def main(apps, service, action, user, template, language):
                 try:
                     e.disable(app)
                 except:
-                    logger.error(sys.exc_info()[0].__name__ + ": " + sys.exc_info()[1].message)
+                    message = (
+                        str(sys.exc_info()[0].__name__) + ": " +
+                        str(sys.exc_info()[1].message)
+                    )
+                    print(message)
+                    logger.error(message)
                     continue
                 if app:
                     entry = ("Disabled '" + app + "' from service '" +

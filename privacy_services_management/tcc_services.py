@@ -138,7 +138,7 @@ class TCCEdit(object):
         # Clearly you tried to modify something you weren't supposed to!
         # For shame.
         if not connection:
-            raise ValueError("Must be root to modify this service!")
+            raise ValueError("Must be root to modify '" + service + "'")
 
         c = connection.cursor()
 
