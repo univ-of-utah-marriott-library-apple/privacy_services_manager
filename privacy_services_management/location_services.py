@@ -132,10 +132,31 @@ def enable_global(enable):
 
     uuid = get_uuid()
 
-    ls_plist = (
-        '/var/db/locationd/Library/Preferences/ByHost/com.apple.locationd.' +
-        str(uuid)
-    )
+    ls_dir = '/var/db/locationd/Library/Preferences/ByHost/'
+
+    ls_plist = ls_dir + 'com.apple.locationd.' + str(uuid)
+
+    if not os.path.isfile(ls_plist):
+        ls_plist = None
+        potentials = [
+            xlist.lstrip('com.apple.locationd.').rstrip('.plist')
+            for x in os.listdir(ls_dir)
+            if x.endswith('.plist')
+            and x.startswith('com.apple.locationd.')
+        ]
+        if len(potentials) > 1:
+            for id in potentials:
+                for part in uuid.split('-'):
+                    if part == id or part.lower() == id or part.upper() == id:
+                        ls_plist = (
+                            ls_dir + 'com.apple.locationd.' + id + '.plist'
+                        )
+        elif len(potentials) == 1:
+            ls_plist = (
+                ls_dir + 'com.apple.locationd.' + potentials[0] + '.plist'
+            )
+        else:
+            raise RuntimeError("No Location Services property list found.")
 
     ls_plist = PlistEditor(ls_plist)
     ls_plist.write("LocationServicesEnabled", value, "int")

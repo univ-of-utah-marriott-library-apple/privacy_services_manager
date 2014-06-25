@@ -26,7 +26,7 @@ A single management utility to administer Location Services, Contacts requests, 
 
 ## System Requirements
 
-Privacy Services Manager will only have any effect on Mac OS X 10.8 and newer; none of the systems it modifies were in place prior to that version. Additionally, the **Accessibility** and **Location Services** systems were not added until OS X 10.9. Attempting to modify them on a 10.8 computer will not have any adverse effects; there simply will not be any effects at all.
+Privacy Services Manager will only have any effect on Mac OS X 10.8 and newer; none of the systems it modifies were in place prior to that version. Additionally, the **Accessibility** and **Ubiquity (iCloud)** systems were not added until OS X 10.9. Attempting to modify them on a 10.8 computer will not have any adverse effects; there simply will not be any effects at all.
 
 ## Contact
 

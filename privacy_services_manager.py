@@ -215,16 +215,16 @@ if __name__ == '__main__':
         if not args.service:
             print("Error: Must specify a service to modify.")
             sys.exit(1)
-        main(
-            apps = args.apps if args.apps else [],
-            service = args.service,
-            action = args.action,
-            user = args.user,
-            template = args.template,
-            language = args.language,
-            log = not args.no_log,
-            log_dest = args.log_dest
-        )
-        # try:
-        # except:
-        #     logger.error(sys.exc_info()[0].__name__ + ": " + sys.exc_info()[1].message)
+        try:
+            main(
+                apps = args.apps if args.apps else [],
+                service = args.service,
+                action = args.action,
+                user = args.user,
+                template = args.template,
+                language = args.language,
+                log = not args.no_log,
+                log_dest = args.log_dest
+            )
+        except:
+            logger.error(sys.exc_info()[0].__name__ + ": " + sys.exc_info()[1].message)
