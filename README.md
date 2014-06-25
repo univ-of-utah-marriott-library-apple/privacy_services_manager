@@ -95,13 +95,18 @@ https://github.com/univ-of-utah-marriott-library-apple/management_tools
 
 Personally I would stick to either **1** or **2** for scripting purposes, since those are specific and verifiable. Use **3** informally in single-time invocations for sake of ease, though.
 
-To find an application's bundle identifier or bundle path, use the `app_lookup.py` script in the Management Tools suite. To use it, simply do:
+To find an application's bundle identifier or bundle path, use the `app_lookup.py` script in the Management Tools suite. As an example, I will lookup the information on Safari:
 
 ```
-$ app_lookup.py application
+$ app_lookup.py safari
+Safari
+    BID:        com.apple.Safari
+    Path:       /Applications/Safari.app
+    Info.plist: /Applications/Safari.app/Contents/Info.plist
+    Executable: /Applications/Safari.app/Contents/MacOS/Safari
 ```
 
-where "application" can be the short name of the app (such as "Safari" or "TextEdit"). This will return the application's identifiable short name, bundle identifier, and some paths to a few aspects of the application.
+As you can see, this will return the application's identifiable short name (Safari), bundle identifier (com.apple.Safari), and some paths to a few aspects of the application (its root path, the path to its `Info.plist` file, and the path to its binary executable).
 
 If you want to know more about finding bundle identifiers yourself, look at the [relevant section of the Management Tools README](https://github.com/univ-of-utah-marriott-library-apple/management_tools/blob/master/README.md#finding-bundle-identifiers-manually).
 
