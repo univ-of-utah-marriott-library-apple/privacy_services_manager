@@ -87,7 +87,6 @@ There are four actions available:
 ### Applications
 
 Applications are looked up using the [Management Tools](https://github.com/univ-of-utah-marriott-library-apple/management_tools) `app_lookup.py`. This means that there are a few ways to specify applications:
-https://github.com/univ-of-utah-marriott-library-apple/management_tools
 
 1. By path to the `.app` folder, e.g. `/Applications/Safari.app`, `/Longer/Path/To/MyApp.app`
 2. By bundle identifier, e.g. `com.apple.Safari`, `com.me.myapp`
