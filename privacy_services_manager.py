@@ -245,3 +245,4 @@ if __name__ == '__main__':
             )
             print(message)
             logger.error(message)
+            sys.exit(3)
