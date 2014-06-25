@@ -13,7 +13,7 @@ except ImportError as e:
 available_services = {
     'accessibility': ('kTCCServiceAccessibility', 'root',  13),
     'contacts':      ('kTCCServiceAddressBook',   'local', 12),
-    'icloud':        ('kTCCServiceUbiquity',      'local', 12)
+    'icloud':        ('kTCCServiceUbiquity',      'local', 13)
 }
 
 class TCCEdit(object):

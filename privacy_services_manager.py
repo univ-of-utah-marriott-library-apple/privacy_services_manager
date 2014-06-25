@@ -16,15 +16,7 @@ options['long_name'] = "Privacy Services Manager"
 options['name']      = '_'.join(options['long_name'].lower().split())
 options['version']   = psm.__version__
 
-def main(apps, service, action, user, template, language, log, log_dest):
-    if not log:
-        logger = loggers.stream_logger(1)
-    else:
-        if log_dest:
-            logger = loggers.file_logger(options['name'], path=log_dest)
-        else:
-            logger = loggers.file_logger(options['name'])
-
+def main(apps, service, action, user, template, language):
     if action == 'add' or action == 'enable':
             with psm.universal.get_editor(service, user, template, language) as e:
                 if len(apps) == 0:
@@ -65,14 +57,10 @@ def main(apps, service, action, user, template, language, log, log_dest):
                         entry += "."
                     logger.info(entry)
     elif action == 'disable':
-        print "Disable"
         with psm.universal.get_editor(service, user, template, language) as e:
-            print "Have editor"
             if len(apps) == 0:
-                print "Trying!"
                 e.disable(None)
             for app in apps:
-                print "Executing for loop!"
                 try:
                     e.disable(app)
                 except:
@@ -185,6 +173,16 @@ class ArgumentParser(argparse.ArgumentParser):
         usage(short=True)
         self.exit(2)
 
+def setup_logger(log, log_dest):
+    global logger
+    if not log:
+        logger = loggers.stream_logger(1)
+    else:
+        if log_dest:
+            logger = loggers.file_logger(options['name'], path=log_dest)
+        else:
+            logger = loggers.file_logger(options['name'])
+
 if __name__ == '__main__':
     '''Parse the command-line options since this was invoked as a script.'''
 
@@ -209,6 +207,7 @@ if __name__ == '__main__':
     elif args.version:
         version()
     else:
+        setup_logger(log = not args.no_log, log_dest = args.log_dest)
         if not args.action:
             print("Error: Must specify an action.")
             sys.exit(1)
@@ -223,8 +222,11 @@ if __name__ == '__main__':
                 user = args.user,
                 template = args.template,
                 language = args.language,
-                log = not args.no_log,
-                log_dest = args.log_dest
             )
         except:
-            logger.error(sys.exc_info()[0].__name__ + ": " + sys.exc_info()[1].message)
+            message = (
+                str(sys.exc_info()[0].__name__) + ": " +
+                str(sys.exc_info()[1].message)
+            )
+            print(message)
+            logger.error(message)

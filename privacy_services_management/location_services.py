@@ -131,26 +131,33 @@ def enable_global(enable):
         raise ValueError("'" + str(enable) + "' not a boolean.")
 
     uuid = get_uuid()
-
     ls_dir = '/var/db/locationd/Library/Preferences/ByHost/'
-
-    ls_plist = ls_dir + 'com.apple.locationd.' + str(uuid)
+    ls_plist = ls_dir + 'com.apple.locationd.' + str(uuid) + '.plist'
 
     if not os.path.isfile(ls_plist):
         ls_plist = None
         potentials = [
-            xlist.lstrip('com.apple.locationd.').rstrip('.plist')
+            x.lstrip('com.apple.locationd.').rstrip('.plist')
             for x in os.listdir(ls_dir)
-            if x.endswith('.plist')
-            and x.startswith('com.apple.locationd.')
+            if str(x).endswith('.plist')
+            and str(x).startswith('com.apple.locationd.')
         ]
+        potentials = [x for x in potentials if not x.find('.') >= 0]
         if len(potentials) > 1:
             for id in potentials:
+                if uuid == id or uuid.lower() == id or uuid.upper() == id:
+                    ls_plist = (
+                        ls_dir + 'com.apple.locationd.' + id + '.plist'
+                    )
+                    break
                 for part in uuid.split('-'):
                     if part == id or part.lower() == id or part.upper() == id:
                         ls_plist = (
                             ls_dir + 'com.apple.locationd.' + id + '.plist'
                         )
+                        break
+                if ls_plist:
+                    break
         elif len(potentials) == 1:
             ls_plist = (
                 ls_dir + 'com.apple.locationd.' + potentials[0] + '.plist'
@@ -158,8 +165,11 @@ def enable_global(enable):
         else:
             raise RuntimeError("No Location Services property list found.")
 
-    ls_plist = PlistEditor(ls_plist)
-    ls_plist.write("LocationServicesEnabled", value, "int")
+    if ls_plist:
+        ls_plist = PlistEditor(ls_plist)
+        ls_plist.write("LocationServicesEnabled", value, "int")
+    else:
+        raise RuntimeError("Could not locate Location Services plist file.")
 
 def get_uuid():
     '''Acquire the UUID of the hardware.'''
@@ -177,7 +187,7 @@ def get_uuid():
     if len(uuid) != 1:
         raise RuntimeError("Could not find a unique UUID.")
 
-    return uuid[0].lstrip().split('= "')[1].rstrip('"')
+    return uuid[0].lstrip().rstrip('"').split('= "')[1]
 
 def enable():
     '''Fix permissions for the _locationd user, then load the locationd
