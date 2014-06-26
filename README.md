@@ -38,13 +38,7 @@ If you have any comments, questions, or other input, either [file an issue](../.
 
 ## Uninstall
 
-To remove Privacy Services Manager from your system, simply run the included uninstallation script:
-
-```
-$ sudo /usr/local/bin/uninstall-privacy-services-manager-VERSION.sh
-```
-
-This will delete all libraries and scripts installed, as well as unregister the package from your system's receipts database.
+To remove Privacy Services Manager from your system, download the .dmg and run the "Uninstall Privacy Services Management" package to uninstall it. (Note that it will say "Installation Successful" but don't believe it - it will only remove files.)
 
 ## Purpose
 
