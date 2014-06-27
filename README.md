@@ -30,7 +30,9 @@ This project requires [Management Tools](https://github.com/univ-of-utah-marriot
 
 Privacy Services Manager will only have any effect on Mac OS X 10.8 and newer; none of the systems it modifies were in place prior to that version. Additionally, the **Accessibility** and **Ubiquity (iCloud)** systems were not added until OS X 10.9. Attempting to modify them on a 10.8 computer will not have any adverse effects; there simply will not be any effects at all.
 
-Additionally, this project requires [Management Tools](https://github.com/univ-of-utah-marriott-library-apple/management_tools) to function properly.
+10.10 "Yosemite" is not fully supported yet. Accessibility, Ubiquity, and AddressBook all funciton properly, but Location Services seems to have changed somewhat since 10.9. I will attempt to update this soon.
+
+This project requires [Management Tools](https://github.com/univ-of-utah-marriott-library-apple/management_tools) to function properly.
 
 ## Contact
 
