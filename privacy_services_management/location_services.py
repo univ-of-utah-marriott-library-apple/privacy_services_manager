@@ -87,7 +87,7 @@ class LSEdit(object):
         if result:
             raise RuntimeError("Failed to remove " + app.name + ".")
 
-    def disable(self, app):
+    def disable(self, application):
         '''Leave (or insert) an application into the Location Services plist,
         but mark the application as being disallowed from utilizing Location
         Services.
@@ -97,11 +97,11 @@ class LSEdit(object):
 
         # If no application is given, then we're modifying the global Location
         # Services system.
-        if not app:
+        if not application:
             enable_global(False)
             return
 
-        app = AppInfo(bid)
+        app = AppInfo(application)
 
         # If the application isn't already in locationd, add it.
         if not self.plist.read(app.bid):
