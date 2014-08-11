@@ -15,6 +15,7 @@ A single management utility to administer Location Services, Contacts requests, 
   * [Options](#options)
   * [Actions](#actions)
   * [Applications](#applications)
+  * [Simple Usage Walkthrough](#simple-usage-walkthrough) - brief instructions to get you started
 * [Service Specifics](#service-specifics) - some odds and ends
 * [Technical](#technical) - information on how it all works
   * [TCC Services](#tcc-services)
@@ -28,11 +29,13 @@ This project requires [Management Tools](https://github.com/univ-of-utah-marriot
 
 ## System Requirements
 
-Privacy Services Manager will only have any effect on Mac OS X 10.8 and newer; none of the systems it modifies were in place prior to that version. Additionally, the **Accessibility** and **Ubiquity (iCloud)** systems were not added until OS X 10.9. Attempting to modify them on a 10.8 computer will not have any adverse effects; there simply will not be any effects at all.
+* OS X 10.8 or newer
+  * Note that the **Accessibility** and **Ubiquity (iCloud)** systems were not added until 10.9. Attempts to modify these settings will not have any effect in 10.8.
+* [Management Tools](https://github.com/univ-of-utah-marriott-library-apple/management_tools)
 
-10.10 "Yosemite" is not fully supported yet. Accessibility, Ubiquity, and AddressBook all funciton properly, but Location Services seems to have changed somewhat since 10.9. I will attempt to update this soon.
+### OS X 10.10 "Yosemite" Notes
 
-This project requires [Management Tools](https://github.com/univ-of-utah-marriott-library-apple/management_tools) to function properly.
+Yosemite is not fully supported yet. Accessibility and Contacts both have full functionality, but Location Services has changed slightly since 10.9. Applications can be added, removed, enabled, and disabled perfectly fine, but the global settings do not work properly. I will update soon to support this functionality.
 
 ## Contact
 
@@ -44,7 +47,7 @@ To remove Privacy Services Manager from your system, download the .dmg and run t
 
 ## Purpose
 
-Simply put, this script will help you to manually adjust the values in the various security and privacy databases. This means you can give or restrict access to any of the supported services by hand, instead of having to run whatever application and wait for it to poll the system for permission. In particular this is useful in a distributed lab environment, such as the university where it was first deployed, as it allows the administrators to prematurely grant access to certain applications without the users needing to request permission. This is especially helpful because some services (Location Services, Accessibility) require privileged access to complete the request, which regular users do not have.
+This script will help you to manually adjust the values in the various security and privacy databases in Apple's Mac OS X. This means you can give or restrict access to any of the supported services manually via the terminal, instead of having to run whatever application and wait for it to poll the system for permission. In particular this is useful in an administrated lab environment, such as the university where it was first deployed, as it allows the administrators to prematurely grant access to certain applications without the users needing to request permission. This is especially helpful because some services (Location Services, Accessibility) require privileged (root) access to complete the request, which regular users do not have.
 
 ## History
 
@@ -58,6 +61,8 @@ The script is fairly straightforward, though there are some options:
 $ privacy_services_manager.py [-hvn] [-l log] [-u user] [--template]
                               [--language] action service applications
 ```
+
+For a brief tutorial, skip ahead to the [Simple Usage Walkthrough](#simple-usage-walkthrough).
 
 ### Options
 
@@ -80,9 +85,19 @@ There are four actions available:
 * `remove` will *delete* the application's entry within the service. There will no longer be a record of that application therein.
 * `disable` will leave the application's record intact, but will disallow the application from utilizing the given service.
 
+### Services
+
+There are three* services that can be modified:
+
+1. `contacts` handles requests to access a user's address book. Many web browsers use this to store login information for various websites. This service is handled on a per-user basis, so any user has the ability to modify this service for themselves.
+2. `accesibility` deals with behind-the-scenes systems that Apple believes require extra privileges to enable. Applications that interface with your computer experience, such as BetterSnapTool or the Steam in-game overlay, require access through this service. These privileges must be granted by a privileged user via `sudo`.
+3. `location` manages any application that desires to report on your physical location. Apple's own Maps application will request access to this, as well as web browsers once you visit a website that asks for your location (such as Google Maps). This system must also be handled by a privileges user via `sudo`.
+
+\*There is actually a fourth service, called "Ubiquity" that can be administered with Privacy Services Manager, though it is referred to as `icloud` in the script (to ensure that you realize what it's accessing). It can be modified by non-privileged users for themselves, like `contacts`. Applications that request permissions with this service want to be able to access a user's iCloud storage and settings. Examples would be any text editing application that is able to save to your iCloud, such as TextEdit or iA Writer. Because of the nature of this request (access to a user's personal files and settings), I recommend against setting this service's permissions manually. This service is not as thoroughly tested.
+
 ### Applications
 
-Applications are looked up using the [Management Tools](https://github.com/univ-of-utah-marriott-library-apple/management_tools) `app_lookup.py`. This means that there are a few ways to specify applications:
+Applications are looked up using the [Management Tools](https://github.com/univ-of-utah-marriott-library-apple/management_tools) `app_lookup.py` script. This means that there are a few ways to specify applications for Privacy Services Manager:
 
 1. By path to the `.app` folder, e.g. `/Applications/Safari.app`, `/Longer/Path/To/MyApp.app`
 2. By bundle identifier, e.g. `com.apple.Safari`, `com.me.myapp`
@@ -94,6 +109,11 @@ To find an application's bundle identifier or bundle path, use the `app_lookup.p
 
 ```
 $ app_lookup.py safari
+```
+
+This will return the following output (on a standard installation of OS X):
+
+```
 Safari
     BID:        com.apple.Safari
     Path:       /Applications/Safari.app
@@ -105,6 +125,76 @@ As you can see, this will return the application's identifiable short name (Safa
 
 If you want to know more about finding bundle identifiers yourself, look at the [relevant section of the Management Tools README](https://github.com/univ-of-utah-marriott-library-apple/management_tools/blob/master/README.md#finding-bundle-identifiers-manually).
 
+### Simple Usage Walkthrough
+
+This is a short walkthrough to get you started using Privacy Services Manager. See the [Full Usage](#full-usage) section below for more detailed information.
+
+During this walkthrough, I will show you how to add an application to various services. The final step will undo all of the actions, leaving the system in effectively the same state as when we started.
+
+***NOTE:*** You must have administrative access to install the necessary components and to be able to use these scripts to their fullest extents.
+
+#### 1. Download and Install Management Tools
+
+As specified above, you must download and install the Management Tools suite prior to using Privacy Services Manager. Go to the [Management Tools Releases](https://github.com/univ-of-utah-marriott-library-apple/management_tools/releases) page and download the most recent version. Double-click the download `.dmg` file, double-click the Installer, follow the on-screen instructions, and you should be good to go!
+
+#### 2. Download and Install Privacy Services Manager
+
+Go to the [Privacy Services Manager releases](../../releases/) page and download the most recent version. Follow the same installation instructions as for Management Tools in the previous step.
+
+#### 3. Launch a Terminal window
+
+The Privacy Services Manager is designed to be scriptable for use in administrated environments. I have not developed a graphical frontend for it, and there currently are not plans to add one. That being said, you're going to be using the Terminal to interact with it.
+
+To open Terminal, look in the `/Applications/Utilities/` folder for a program called `Terminal.app` (or just `Terminal`). To get here, you can click Finder in the dock, then use the menubar at the top to click `Go` -> `Go to Folder...`. In the box that pops up, put `/Applications/Utilities`. A folder will appear; search it for `Terminal` and launch it by double-clicking.
+
+Alternatively, if you are comfortable with Spotlight you can use that to launch Terminal.
+
+#### 4. Add an application to your own `contacts` service permissions
+
+I know through my own experience that, at some point or another, most web browsers will ask you for permission to look at your contacts. They can store things like your usernames and passwords here, among other things. Let's add Safari as a trusted application for your own account!
+
+Within the Terminal, simply execute the following command (only put in everything after the `$`, and then press `return` or `enter`, depending on your keyboard):
+
+```
+$ /usr/local/bin/privacy_services_manager.py add contacts safari
+```
+
+The application can actually be specified in three different ways: either by short name ('`safari`'), bundle identifier ('`com.apple.Safari`'), or path to the `.app` folder ('`/Applications/Safari.app`'). For general one-time use I just use the short name, because it's generally specific enough, but if you intend to script this functionality then I would stick to one of the other two methods since they're more precise.
+
+To make sure that this worked, open System Preferences (click the Apple icon in the top-left of the screen, then choose System Preferences). From the System Preferences window, click (in OS X 10.9) "Security & Privacy", then go to the "Privacy" tab at the top, then the "Contacts" section on the left. You should now see an entry for "Safari.app" with a check in the box. This indicates that the application was successfully added to the database.
+
+#### 5. Add an application to the global `location` service permissions
+
+Two of the services supported by Privacy Services Manager require administrative privileges to modify: *Accessibility* and *Location Services*. For this part of the walkthrough we will be adding Apple's Maps application to Location Services, but know that the process is the same for Accessibility.
+
+First, because Location Services is handled a bit differently under-the-hood, we have to enable the system globally. To accomplish this, you must utilize your administrative privileges. In Unix-like systems, this is done by putting `sudo` in front of your commands. (This actually is an entirely separate command, but the nuances of `sudo` invocation are not the subject of this tutorial.)
+
+```
+$ sudo /usr/local/bin/privacy_services_manager.py enable location
+```
+
+This will turn on the Location Services system globally. To test that this much worked, open up System Preferences, go to "Privacy & Security", and under the "Privacy" tab select "Location Services". At the top, you should see a check in the box next to "Enable Location Services."
+
+Now we will add Maps to the database. To do this, simply do:
+
+```
+$ sudo /usr/local/bin/privacy_services_manager.py add location maps
+```
+
+Now in the "Location Services" submenu from before, you should be able to see "Maps.app".
+
+#### 6. Add an application to another user's `contacts` service permissions
+
+You've just installed some great program on the computer for your grandma, and you know it's going to ask for permission to leaf through her address book the first time she launches it. Because your grandma isn't terribly computer-savvy, she might think this is some sort of virus or scam or something! To prevent her from this headache, you decide to preemptively add permission for this application to her `contacts` service.
+
+Let's say the application is called "MyApp". To give MyApp permission to access your grandma's contacts database, you need administrative privileges again. Then do:
+
+```
+$ sudo /usr/local/bin/privacy_services_manager.py --user grandma add contacts MyApp
+```
+
+This should add MyApp to your grandmother's contacts permissions, preventing any issues with her launching MyApp for the first time.
+
 ## Service Specifics
 
 The `--user`, `--template`, and `--language` flags only affect those services which use the TCC system, i.e. Contacts, iCloud, and Accessibility. Providing these options for Location Services will have no effect.
@@ -112,7 +202,7 @@ The `--user`, `--template`, and `--language` flags only affect those services wh
 If no application is given and Location Services is being modified, the Location Services system will be affected at-large. That is, if you were to run
 
 ```
-$ privacy_services_manager.py enable location
+$ sudo privacy_services_manager.py enable location
 ```
 
 Then the Location Services system would be enabled globally, without adding any applications to it.
@@ -123,7 +213,7 @@ Here are some of the details of what goes on behind-the-scenes.
 
 ### TCC Services
 
-Apple in fact has multiple TCC.db database files in any given installation of OS X 10.8 or newer (though none of them exist until the appropriate service is requested access to).  There is one for each user, in their `~/Library/Application Support/com.apple.TCC` folder, and there is one root database, located in `/Library/Application Support/com.apple.TCC`.  The local databases (those in each user's directory) are responsible for *Contacts* access and *iCloud* access.  The settings for these applications are granted on a per-user, per-application basis this way.  However, *Accessibility* permissions are stored (and must be stored) in the `/Library/...` database.  I assume this is due to the nature of those types of applications that request *Accessibility* access (they are granted some freedoms to the machine that could potentially be undesirable, so administrative access is required to add them).
+In any given installation of OS X 10.8 or newer, there can be multiple TCC.db database files (though none of these files exists until the appropriate service is requested access to).  There is one for each user, in their `~/Library/Application Support/com.apple.TCC/` folder, and there is one root database, located in `/Library/Application Support/com.apple.TCC/`.  The local databases (those in each user's directory) are responsible for *Contacts* access and *iCloud (Ubiquity)* access.  The settings for these applications are granted on a per-user, per-application basis this way.  However, *Accessibility* permissions are stored (and must be stored) in the `/Library/...` database.  I assume this is due to the nature of those types of applications that request *Accessibility* access (they are granted some freedoms to the machine that could potentially be undesirable, so administrative access is required to add them).
 
 This script will add *Accessibility* requests to the `/Library/...` database (assuming it is run with root permissions).  The other requests will be added to the TCC database file located at `~/Library/Application Support/com.apple.TCC/TCC.db`.  This is Apple's default directory for an individual user's settings.
 
