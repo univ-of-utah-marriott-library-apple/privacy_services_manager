@@ -5,9 +5,9 @@ A single management utility to administer Location Services, Contacts requests, 
 
 ## Contents
 
-* [Download](#download) - get the .pkg
-* [System Requirements](#system-requirements) - what you need
 * [Contact](#contact) - how to reach us
+* [System Requirements](#system-requirements) - what you need
+* [Install](#install) - instructions for installing Privacy Services Manager
 * [Uninstall](#uninstall) - removal of Privacy Services Manager
 * [Purpose](#purpose) - what is this command for?
 * [History](#history) - how it came to be
@@ -21,29 +21,34 @@ A single management utility to administer Location Services, Contacts requests, 
   * [TCC Services](#tcc-services)
   * [Location Services](#location-services)
 
-## Download
-
-This project requires [Management Tools](https://github.com/univ-of-utah-marriott-library-apple/management_tools), so install that first.
-
-[Then download the latest installer for Privacy Services Manager here!](../../releases/)
-
-## System Requirements
-
-* OS X 10.8 or newer
-  * Note that the **Accessibility** and **Ubiquity (iCloud)** systems were not added until 10.9. Attempts to modify these settings will not have any effect in 10.8.
-* [Management Tools](https://github.com/univ-of-utah-marriott-library-apple/management_tools)
-
-### OS X 10.10 "Yosemite" Notes
-
-Yosemite is not fully supported yet. Accessibility and Contacts both have full functionality, but Location Services has changed slightly since 10.9. Applications can be added, removed, enabled, and disabled perfectly fine, but the global settings do not work properly. I will update soon to support this functionality.
-
 ## Contact
 
 If you have any comments, questions, or other input, either [file an issue](../../issues) or [send an email to us](mailto:mlib-its-mac-github@lists.utah.edu). Thanks!
 
+## System Requirements
+
+* OS X 10.8 or newer
+  * Note that the **Accessibility** and **Ubiquity (iCloud)** systems were not added until OS X 10.9. Attempts to modify these settings will not have any effect in OS X 10.8.
+* Python 2.7.x (which you can download [here](https://www.python.org/download/))
+* [Management Tools](https://github.com/univ-of-utah-marriott-library-apple/management_tools)
+
+### OS X 10.10 "Yosemite" Notes
+
+OS X Yosemite is not fully supported yet. Accessibility and Contacts both have full functionality, but Location Services has changed slightly since OS X 10.9. Applications can be added, removed, enabled, and disabled perfectly fine, but the global settings do not work properly. I will update soon to support this functionality.
+
+## Install
+
+First, check that you meet all the requirements and have the prerequisites outlined in the [System Requirements](#system-requirements) section.
+
+[Then download the latest installer for Privacy Services Manager here!](../../releases/)
+
+Once the download has completed, double-click the `.dmg` file. This will open a window in Finder where you should see two packages (files ending in `.pkg`). Double click the one named "Privacy Services Management [x.x.x].pkg" (where *x.x.x* represents the current version number). This will launch the installer, which will guide you through the installation process. (Follow the on-screen instructions to complete the installation.)
+
 ## Uninstall
 
-To remove Privacy Services Manager from your system, download the .dmg and run the "Uninstall Privacy Services Management" package to uninstall it. (Note that it will say "Installation Successful" but don't believe it - it will only remove files.)
+To remove Privacy Services Manager from your system, download the .dmg and run the "Uninstall Privacy Services Management [x.x.x]" package to uninstall it, where *x.x.x* represents the version number. The version is not relevant, as all of the Privacy Services Management uninstallers will work on any version of Privacy Services Manager.
+
+At the end it will say "Installation Successful" but don't believe it - this will only remove files.
 
 ## Purpose
 
@@ -68,13 +73,13 @@ For a brief tutorial, skip ahead to the [Simple Usage Walkthrough](#simple-usage
 
 | Option | Purpose |
 |--------|---------|
-| `-h`, `--help` | Prints help information. |
-| `-v`, `--version` | Prints version information. |
-| `-n`, `--no-log` | Redirects logging to stdio. |
-| `--template` | Modify permissions for Apple's User Template. Only applies to certain services. |
+| `-h`, `--help` | Prints help information and quits. |
+| `-v`, `--version` | Prints version information and quits. |
+| `-n`, `--no-log` | Redirects logging to standard output (stdout, i.e. the console). |
+| `--template` | Modify privacy services for Apple's User Template. Only applies to certain services. |
 | `-l log`, `--log-dest log` | Redirect logging to the specified file. (This can be overridden by `--no-log`.) |
-| `-u user`, `--user user` | Modify permissions for `user`, not yourself. (Requires root privileges.) |
-| `--language lang` | When changing permissions for the User Template, modify the `lang` template. |
+| `-u user`, `--user user` | Modify privacy services for a specific user named "`user`". (Requires root privileges.) |
+| `--language lang` | When changing privacy services for the Apple's User Template, modify the `lang` template. (Apple provides many User Template folder for different languages.) |
 
 ### Actions
 
@@ -173,7 +178,7 @@ First, because Location Services is handled a bit differently under-the-hood, we
 $ sudo /usr/local/bin/privacy_services_manager.py enable location
 ```
 
-This will turn on the Location Services system globally. To test that this much worked, open up System Preferences, go to "Privacy & Security", and under the "Privacy" tab select "Location Services". At the top, you should see a check in the box next to "Enable Location Services."
+This will turn on the Location Services system globally. To test that it is working properly, open up System Preferences, go to "Privacy & Security", and under the "Privacy" tab select "Location Services". At the top, you should see a check in the box next to "Enable Location Services."
 
 Now we will add Maps to the database. To do this, simply do:
 
