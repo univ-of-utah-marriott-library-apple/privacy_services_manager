@@ -24,6 +24,17 @@ class LSEdit(object):
         # Only root may modify the Location Services system.
         if os.geteuid() != 0:
             raise RuntimeError("Must be root to modify Location Services!")
+
+        # Check the version of OS X before continuing; only Darwin versions 12
+        # and above support the TCC database system.
+        try:
+            version = int(os.uname()[2].split('.')[0])
+        except:
+            raise RuntimeError("Could not acquire the OS X version.")
+        if version < 10:
+            raise RuntimeError("Location Services is not supported in this version of OS X.")
+        self.version = version
+
         # Disable the locationd launchd item. (Changes will not be properly
         # cached if this is not done.)
         self.__disable()
@@ -167,7 +178,10 @@ def enable_global(enable):
 
     if ls_plist:
         ls_plist = PlistEditor(ls_plist)
-        ls_plist.write("LocationServicesEnabled", value, "int")
+        if self.version < 14:
+            ls_plist.write("LocationServicesEnabled", value, "int")
+        else:
+            ls_plist.write("LocationServicesEnabledIn7.0", value, "int")
     else:
         raise RuntimeError("Could not locate Location Services plist file.")
 
@@ -209,7 +223,7 @@ def enable():
         raise RuntimeError("Unable to repair permissions: '/var/db/locationd'!")
 
     launchctl = [
-        'launchctl',
+        '/bin/launchctl',
         'load',
         '/System/Library/LaunchDaemons/com.apple.locationd.plist'
     ]
