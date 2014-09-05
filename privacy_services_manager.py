@@ -5,33 +5,58 @@ import privacy_services_management as psm
 import sys
 
 try:
-    from management_tools import loggers
+    from management_tools.app_info import AppInfo
 except ImportError as e:
     print "You need the 'Management Tools' module to be installed first."
     print "https://github.com/univ-of-utah-marriott-library-apple/management_tools"
     raise e
 
-options = {}
-options['long_name'] = "Privacy Services Manager"
-options['name']      = '_'.join(options['long_name'].lower().split())
-options['version']   = psm.__version__
+attributes = {
+    'long_name': "Privacy Services Manager",
+    'name':      "privacy_services_manager",
+    'version':   psm.__version__,
+}
 
-def main(apps, service, action, user, template, language):
+# attributes = {}
+# attributes['long_name'] = "Privacy Services Manager"
+# attributes['name']      = '_'.join(attributes['long_name'].lower().split())
+# attributes['version']   = psm.__version__
+
+def main(apps, service, action, user, template, language, logger):
     if action == 'add' or action == 'enable':
-            with psm.universal.get_editor(service, user, template, language) as e:
-                if len(apps) == 0:
-                    e.insert(None)
-                for app in apps:
-                    if app:
-                        e.insert(app)
-                        entry = "Added '" + app + "' to service '" + service + "'"
-                        if user:
-                            entry += " for user '" + user + "'."
-                        elif template:
-                            entry += " for the User Template."
-                        else:
-                            entry += "."
-                        logger.info(entry)
+        with psm.universal.get_editor(service, user, template, language) as e:
+            if len(apps) == 0:
+                apps.append('')
+            for app in apps:
+                if app:
+                    app = AppInfo(app).bid
+                    entry = ''
+                    if action == 'add':
+                        entry += "Added '"
+                    else:
+                        entry += "Enabled '"
+                    entry += app + "' in service '" + "'" + service + "'"
+                    if not user and not template:
+                        import getpass
+                        user = getpass.getuser()
+                    if user:
+                        entry += " for user '" + user + "'."
+                    if template:
+                        entry += " for the " + language + " template user."
+                    logger.info(entry)
+            # if len(apps) == 0:
+            #     e.insert(None)
+            # for app in apps:
+            #     if app:
+            #         e.insert(app)
+            #         entry = "Added '" + app + "' to service '" + service + "'"
+            #         if user:
+            #             entry += " for user '" + user + "'."
+            #         elif template:
+            #             entry += " for the User Template."
+            #         else:
+            #             entry += "."
+            #         logger.info(entry)
     elif action == 'remove':
         with psm.universal.get_editor(service, user, template, language) as e:
             if len(apps) == 0:
@@ -68,8 +93,8 @@ def main(apps, service, action, user, template, language):
 def version():
     '''Prints the version information.'''
 
-    print("{name}, version {version}\n".format(name=options['long_name'],
-                                               version=options['version']))
+    print("{name}, version {version}\n".format(name=attributes['long_name'],
+                                               version=attributes['version']))
 
 def usage(short=False):
     '''Usage information.'''
@@ -102,7 +127,7 @@ Accessibility, and Locations.
     --language lang
         Only functions when used with --template. Specifies which User Template
         is modified.\
-'''.format(name=options['name']))
+'''.format(name=attributes['name']))
 
     if not short:
         print('''
@@ -161,15 +186,15 @@ class ArgumentParser(argparse.ArgumentParser):
         usage(short=True)
         self.exit(2)
 
-def setup_logger(log, log_dest):
-    global logger
-    if not log:
-        logger = loggers.stream_logger(1)
-    else:
-        if log_dest:
-            logger = loggers.file_logger(options['name'], path=log_dest)
-        else:
-            logger = loggers.file_logger(options['name'])
+# def setup_logger(log, log_dest):
+#     global logger
+#     if not log:
+#         logger = loggers.stream_logger(1)
+#     else:
+#         if log_dest:
+#             logger = loggers.file_logger(attributes['name'], path=log_dest)
+#         else:
+#             logger = loggers.file_logger(attributes['name'])
 
 if __name__ == '__main__':
     '''Parse the command-line options since this was invoked as a script.'''
@@ -195,7 +220,12 @@ if __name__ == '__main__':
     elif args.version:
         version()
     else:
-        setup_logger(log = not args.no_log, log_dest = args.log_dest)
+        # setup_logger(log = not args.no_log, log_dest = args.log_dest)
+        logger = psm.universal.Output(
+            name     = attributes['name'],
+            log      = not args.no_log,
+            log_dest = args.log_dest
+        )
         if not args.action:
             print("Error: Must specify an action.")
             sys.exit(1)
@@ -204,18 +234,19 @@ if __name__ == '__main__':
             sys.exit(1)
         try:
             main(
-                apps = args.apps if args.apps else [],
-                service = args.service,
-                action = args.action,
-                user = args.user,
+                apps     = args.apps if args.apps else [],
+                service  = args.service,
+                action   = args.action,
+                user     = args.user,
                 template = args.template,
                 language = args.language,
+                logger   = logger,
             )
         except:
             message = (
                 str(sys.exc_info()[0].__name__) + ": " +
                 str(sys.exc_info()[1].message)
             )
-            print(message)
+            # print(message)
             logger.error(message)
             sys.exit(3)
