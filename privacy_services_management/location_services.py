@@ -1,12 +1,15 @@
 import os
 import subprocess
+import universal
 
 try:
     from management_tools.plist_editor import PlistEditor
     from management_tools.app_info import AppInfo
 except ImportError as e:
-    print "You need the 'Management Tools' module to be installed first."
-    print "https://github.com/univ-of-utah-marriott-library-apple/management_tools"
+    print("You need the 'Management Tools' module to be installed first.")
+    print(
+        "https://github.com/univ-of-utah-marriott-library-apple/" +
+        "management_tools")
     raise e
 
 class LSEdit(object):
@@ -20,7 +23,13 @@ class LSEdit(object):
     bar(baz)
     '''
 
-    def __init__(self):
+    def __init__(self, logger=None):
+        # Set the logger for output.
+        if logger:
+            self.logger = logger
+        else:
+            self.logger = universal.NullOutput()
+
         # Only root may modify the Location Services system.
         if os.geteuid() != 0:
             raise RuntimeError("Must be root to modify Location Services!")
@@ -32,7 +41,8 @@ class LSEdit(object):
         except:
             raise RuntimeError("Could not acquire the OS X version.")
         if version < 10:
-            raise RuntimeError("Location Services is not supported in this version of OS X.")
+            raise RuntimeError(
+                "Location Services is not supported in this version of OS X.")
         self.version = version
 
         # Disable the locationd launchd item. (Changes will not be properly
@@ -40,6 +50,8 @@ class LSEdit(object):
         self.__disable()
         # This is where the applications' authorizations are stored.
         self.plist = PlistEditor('/var/db/locationd/clients')
+        self.logger.info(
+            "Modifying service 'location' at '" + self.plist.path + "'.")
 
     def __enter__(self):
         return self
@@ -53,10 +65,15 @@ class LSEdit(object):
         # If no application is given, then we're modifying the global Location
         # Services system.
         if not app:
+            self.logger.info("Enabling service 'location' globally.")
             enable_global(True)
+            self.logger.info("Globally enabled successfully.")
             return
 
         app = AppInfo(app)
+
+        # Verbosity!
+        logger.info("Inserting '" + app.bid + "' into service 'location'...")
 
         # This is used for... something. Don't know what, but it's necessary.
         requirement = (
@@ -77,7 +94,8 @@ class LSEdit(object):
         result += self.plist.dict_add(app.bid, "Whitelisted", "FALSE", "bool")
         if result:
             # Clearly there was an error...
-            raise RuntimeError("Failed to add " + app.name + ".")
+            raise RuntimeError("Failed to insert " + app.name + ".")
+        logger.info("Inserted successfully.")
 
     def remove(self, app):
         '''Remove 'app' from Location Services.
@@ -93,10 +111,14 @@ class LSEdit(object):
 
         app = AppInfo(app)
 
+        # Verbosity
+        logger.info("Removing '" + app.bid + "' from service 'location'...")
+
         # Otherwise, just delete its entry in the plist.
         result = self.plist.delete(app.bid)
         if result:
             raise RuntimeError("Failed to remove " + app.name + ".")
+        logger.info("Removed successfully.")
 
     def disable(self, application):
         '''Leave (or insert) an application into the Location Services plist,
@@ -109,10 +131,15 @@ class LSEdit(object):
         # If no application is given, then we're modifying the global Location
         # Services system.
         if not application:
+            logger.info("Disabling service 'location' globally...")
             enable_global(False)
+            logger.info("Globally disabled successfully.")
             return
 
         app = AppInfo(application)
+
+        # Verboseness
+        logger.info("Disabling '" + app.bid + "' in service 'location'...")
 
         # If the application isn't already in locationd, add it.
         if not self.plist.read(app.bid):
@@ -122,6 +149,7 @@ class LSEdit(object):
         result = self.plist.dict_add(app.bid, "Authorized", "FALSE", "bool")
         if result:
             raise RuntimeError("Failed to disable " + app.name + ".")
+        logger.info("Disabled successfully.")
 
     def __exit__(self, type, value, traceback):
         # Make sure that the locationd launchd item is reactivated.
@@ -129,9 +157,12 @@ class LSEdit(object):
 
     def __enable(self):
         enable()
+        self.logger.info("Enabled locationd system.")
 
     def __disable(self):
         disable()
+        self.logger.info(
+            "Disabled locationd system. (This is normal. DON'T PANIC.)")
 
 def enable_global(enable):
     '''Enables or disables the Location Services system globally.'''

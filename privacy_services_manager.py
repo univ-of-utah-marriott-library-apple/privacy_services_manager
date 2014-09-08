@@ -7,16 +7,20 @@ import sys
 try:
     from management_tools.app_info import AppInfo
 except ImportError as e:
-    print "You need the 'Management Tools' module to be installed first."
-    print "https://github.com/univ-of-utah-marriott-library-apple/management_tools"
+    print("You need the 'Management Tools' module to be installed first.")
+    print(
+        "https://github.com/univ-of-utah-marriott-library-apple/" +
+        "management_tools")
     raise e
 
-attributes = {
-    'long_name': "Privacy Services Manager",
-    'name':      "privacy_services_manager",
-    'version':   psm.__version__,
-}
-
+# The following 'attributes' dicts are defunct. It was moved to universal.
+#
+# attributes = {
+#     'long_name': "Privacy Services Manager",
+#     'name':      "privacy_services_manager",
+#     'version':   psm.__version__,
+# }
+#
 # attributes = {}
 # attributes['long_name'] = "Privacy Services Manager"
 # attributes['name']      = '_'.join(attributes['long_name'].lower().split())
@@ -24,26 +28,49 @@ attributes = {
 
 def main(apps, service, action, user, template, language, logger):
     if action == 'add' or action == 'enable':
-        with psm.universal.get_editor(service, user, template, language) as e:
+        with psm.universal.get_editor(service, user, template, language, logger) as e:
             if len(apps) == 0:
                 apps.append('')
             for app in apps:
                 if app:
-                    app = AppInfo(app).bid
-                    entry = ''
-                    if action == 'add':
-                        entry += "Added '"
-                    else:
-                        entry += "Enabled '"
-                    entry += app + "' in service '" + "'" + service + "'"
-                    if not user and not template:
-                        import getpass
-                        user = getpass.getuser()
-                    if user:
-                        entry += " for user '" + user + "'."
-                    if template:
-                        entry += " for the " + language + " template user."
-                    logger.info(entry)
+                    e.insert(app)
+                else:
+                    e.insert(None)
+            # if len(apps) == 0:
+            #     apps.append('')
+            # for app in apps:
+            #     if app:
+            #         # Look up the app's bundle identifier.
+            #         app = AppInfo(app).bid
+            #         # Add/enable this application for the specified service.
+            #         # e.insert(app)
+            #         # Log the event in the format:
+            #         # Added 'com.apple.Safari' in service 'location' for user 'username'.
+            #         entry = ''
+            #         if action == 'add':
+            #             entry += "Added '"
+            #         else:
+            #             entry += "Enabled '"
+            #         entry += app + "' in service '" + "'" + service + "'"
+            #         if not user and not template:
+            #             import getpass
+            #             user = getpass.getuser()
+            #         if user:
+            #             entry += " for user '" + user + "'."
+            #         if template:
+            #             entry += " for the " + language + " template user."
+            #         logger.info(entry)
+            #     else:
+            #         # Enable the service globally (if applicable).
+            #         # e.insert(None)
+            #         # Log the event in the format:
+            #         # Enabled service 'accessibility' globally.
+            #         pass
+            ########
+            #
+            # OLD VERSION
+            #
+            ########
             # if len(apps) == 0:
             #     e.insert(None)
             # for app in apps:
@@ -93,8 +120,11 @@ def main(apps, service, action, user, template, language, logger):
 def version():
     '''Prints the version information.'''
 
-    print("{name}, version {version}\n".format(name=attributes['long_name'],
-                                               version=attributes['version']))
+    print(
+        "{name}, version {version}\n".format(
+        name=psm.universal.attributes['long_name'],
+        version=psm.universal.attributes['version'])
+    )
 
 def usage(short=False):
     '''Usage information.'''
@@ -127,7 +157,7 @@ Accessibility, and Locations.
     --language lang
         Only functions when used with --template. Specifies which User Template
         is modified.\
-'''.format(name=attributes['name']))
+'''.format(name=psm.universal.attributes['name']))
 
     if not short:
         print('''
@@ -222,7 +252,7 @@ if __name__ == '__main__':
     else:
         # setup_logger(log = not args.no_log, log_dest = args.log_dest)
         logger = psm.universal.Output(
-            name     = attributes['name'],
+            name     = psm.universal.attributes['name'],
             log      = not args.no_log,
             log_dest = args.log_dest
         )
@@ -232,21 +262,21 @@ if __name__ == '__main__':
         if not args.service:
             print("Error: Must specify a service to modify.")
             sys.exit(1)
-        try:
-            main(
-                apps     = args.apps if args.apps else [],
-                service  = args.service,
-                action   = args.action,
-                user     = args.user,
-                template = args.template,
-                language = args.language,
-                logger   = logger,
-            )
-        except:
-            message = (
-                str(sys.exc_info()[0].__name__) + ": " +
-                str(sys.exc_info()[1].message)
-            )
-            # print(message)
-            logger.error(message)
-            sys.exit(3)
+        main(
+            apps     = args.apps if args.apps else [],
+            service  = args.service,
+            action   = args.action,
+            user     = args.user,
+            template = args.template,
+            language = args.language,
+            logger   = logger,
+        )
+        # try:
+        # except:
+        #     message = (
+        #         str(sys.exc_info()[0].__name__) + ": " +
+        #         str(sys.exc_info()[1].message)
+        #     )
+        #     # print(message)
+        #     logger.error(message)
+        #     sys.exit(3)

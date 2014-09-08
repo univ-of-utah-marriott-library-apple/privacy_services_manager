@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import universal
 
 try:
     from management_tools.app_info import AppInfo
@@ -27,7 +28,20 @@ class TCCEdit(object):
     bar(baz)
     '''
 
-    def __init__(self, service=None, user='', template=False, lang='English'):
+    def __init__(
+        self,
+        service,
+        user     = '',
+        template = False,
+        lang     = 'English',
+        logger   = None
+    ):
+        # Set the logger for output.
+        if logger:
+            self.logger = logger
+        else:
+            self.logger = universal.NullOutput()
+
         # If a service is given, stick with that.
         self.service = service
 
@@ -47,6 +61,7 @@ class TCCEdit(object):
         self.version = version
 
         # Establish database locations.
+        local_log_entry = ''
         if template:
             # This script supports the use of the User Template provided by
             # Apple, but only root may modify anything therein.
@@ -57,13 +72,18 @@ class TCCEdit(object):
                 lang +
                 '.lproj/Library/Application Support/com.apple.TCC/TCC.db'
             )
+            local_log_entry = (
+                "Set to modify local permissions for the '" + lang +
+                "' User Template at ")
         else:
             self.local_path = os.path.expanduser(
                 '~' +
                 user +
                 '/Library/Application Support/com.apple.TCC/TCC.db'
             )
-        self.root_path = '/Library/Application Support/com.apple.TCC/TCC.db'
+            local_log_entry = (
+                "Set to modify local permissions for user '" + user + "' at "
+            )
 
         # Check the user didn't supply a bad username.
         if not self.local_path.startswith('/'):
@@ -78,6 +98,12 @@ class TCCEdit(object):
                 )
             else:
                 raise ValueError("Invalid username supplied: " + user)
+
+        self.logger.info(local_log_entry + "'" + self.local_path + "'.")
+        self.root_path = '/Library/Application Support/com.apple.TCC/TCC.db'
+        self.logger.info(
+            "Set to modify global permissions for all users at '" +
+            self.root_path + "'.")
 
         # Ensure the databases exist properly.
         if os.geteuid() == 0 and not os.path.exists(self.root_path):
@@ -129,8 +155,11 @@ class TCCEdit(object):
 
         # Version checking for the current service.
         if self.version < available_services[service][2]:
-            raise RuntimeError("Service '" + service +
-                               "' does not exist on this version of OS X.")
+            raise RuntimeError(
+                "Service '" + service +
+                "' does not exist on this version of OS X.")
+
+        self.logger.info("Inserting '" + bid + "' in service '" + service + "'...")
 
         # Establish a connection with the TCC database.
         connection = self.connections[available_services[service][1]]
@@ -153,18 +182,14 @@ class TCCEdit(object):
                 'INSERT or REPLACE into access values(?, ?, 0, 1, 0)',
                 values
             )
-            # c.execute("INSERT or REPLACE into access values("
-            #             + "'" + available_services[service][0] + "', "
-            #             + "'" + bid + "', 0, 1, 0)")
         else:
             c.execute(
                 'INSERT or REPLACE into access values(?, ?, 0, 1, 0, NULL)',
                 values
             )
-            # c.execute("INSERT or REPLACE into access values("
-            #             + "'" + available_services[service][0] + "', "
-            #             + "'" + bid + "', 0, 1, 0, NULL)")
         connection.commit()
+
+        self.logger.info("Inserted successfully.")
 
     def remove(self, app, service=None):
         '''Removes 'app' from the specified service.
@@ -189,6 +214,9 @@ class TCCEdit(object):
         if not service in available_services.keys():
             raise ValueError("Invalid service provided: " + service)
 
+        self.logger.info(
+            "Removing '" + bid + "' from service '" + service + "'...")
+
         # Establish a connection with the TCC database.
         connection = self.connections[available_services[service][1]]
 
@@ -202,10 +230,9 @@ class TCCEdit(object):
         values = (available_services[service][0], bid)
         c.execute('DELETE FROM access WHERE service IS ? AND client IS ?',
                   values)
-        # c.execute("DELETE FROM access WHERE service IS "
-        #             + "'" + available_services[service][0] + "'"
-        #             + " AND client IS '" + bid + "'")
         connection.commit()
+
+        self.logger.info("Removed successfully.")
 
     def disable(self, app, service=None):
         '''Disables 'app' for the specified service, but leaves the entry in the
@@ -230,6 +257,9 @@ class TCCEdit(object):
         # Check the service is recognized.
         if not service in available_services.keys():
             raise ValueError("Invalid service provided: " + service)
+
+        self.logger.info(
+            "Disabling '" + bid + "' in service '" + service + "'...")
 
         # Establish a connection with the TCC database.
         connection = self.connections[available_services[service][1]]
@@ -262,12 +292,18 @@ class TCCEdit(object):
                 )
         connection.commit()
 
+        self.logger.info("Disabled successfully.")
+
     def __create(self, path):
         '''Creates a database in the event that it does not already exist. These
         databases are formatted in a particular way. Don't change this!
 
         path - the path to the TCC database file to be created
         '''
+
+        self.logger.info(
+            "TCC.db file was expected at '" + path +
+            "' but was not found. Creating new TCC.db file...")
 
         # Make sure our directory tree exists.
         if not os.path.exists(os.path.dirname(path)):
@@ -326,6 +362,8 @@ class TCCEdit(object):
 
         connection.commit()
         connection.close()
+
+        self.logger.info("TCC.db file created successfully.")
 
     def __exit__(self, type, value, traceback):
         '''This handles the closing of connections when the object is closed.
