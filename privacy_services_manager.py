@@ -13,109 +13,21 @@ except ImportError as e:
         "management_tools")
     raise e
 
-# The following 'attributes' dicts are defunct. It was moved to universal.
-#
-# attributes = {
-#     'long_name': "Privacy Services Manager",
-#     'name':      "privacy_services_manager",
-#     'version':   psm.__version__,
-# }
-#
-# attributes = {}
-# attributes['long_name'] = "Privacy Services Manager"
-# attributes['name']      = '_'.join(attributes['long_name'].lower().split())
-# attributes['version']   = psm.__version__
-
 def main(apps, service, action, user, template, language, logger):
-    if action == 'add' or action == 'enable':
-        with psm.universal.get_editor(service, user, template, language, logger) as e:
-            if len(apps) == 0:
-                apps.append('')
+    if len(apps) == 0:
+        apps.append(None)
+    with psm.universal.get_editor(service, user, template, language, logger) as e:
+        if action == 'add' or action == 'enable':
             for app in apps:
-                if app:
-                    e.insert(app)
-                else:
-                    e.insert(None)
-            # if len(apps) == 0:
-            #     apps.append('')
-            # for app in apps:
-            #     if app:
-            #         # Look up the app's bundle identifier.
-            #         app = AppInfo(app).bid
-            #         # Add/enable this application for the specified service.
-            #         # e.insert(app)
-            #         # Log the event in the format:
-            #         # Added 'com.apple.Safari' in service 'location' for user 'username'.
-            #         entry = ''
-            #         if action == 'add':
-            #             entry += "Added '"
-            #         else:
-            #             entry += "Enabled '"
-            #         entry += app + "' in service '" + "'" + service + "'"
-            #         if not user and not template:
-            #             import getpass
-            #             user = getpass.getuser()
-            #         if user:
-            #             entry += " for user '" + user + "'."
-            #         if template:
-            #             entry += " for the " + language + " template user."
-            #         logger.info(entry)
-            #     else:
-            #         # Enable the service globally (if applicable).
-            #         # e.insert(None)
-            #         # Log the event in the format:
-            #         # Enabled service 'accessibility' globally.
-            #         pass
-            ########
-            #
-            # OLD VERSION
-            #
-            ########
-            # if len(apps) == 0:
-            #     e.insert(None)
-            # for app in apps:
-            #     if app:
-            #         e.insert(app)
-            #         entry = "Added '" + app + "' to service '" + service + "'"
-            #         if user:
-            #             entry += " for user '" + user + "'."
-            #         elif template:
-            #             entry += " for the User Template."
-            #         else:
-            #             entry += "."
-            #         logger.info(entry)
-    elif action == 'remove':
-        with psm.universal.get_editor(service, user, template, language) as e:
-            if len(apps) == 0:
-                e.remove(None)
+                e.insert(app)
+        elif action == 'remove':
             for app in apps:
-                if app:
-                    e.remove(app)
-                    entry = ("Removed '" + app + "' from service '" +
-                             service + "'")
-                    if user:
-                        entry += " for user '" + user + "'."
-                    elif template:
-                        entry += " for the User Template."
-                    else:
-                        entry += "."
-                    logger.info(entry)
-    elif action == 'disable':
-        with psm.universal.get_editor(service, user, template, language) as e:
-            if len(apps) == 0:
-                e.disable(None)
+                e.remove(app)
+        elif action == 'disable':
             for app in apps:
-                if app:
-                    e.disable(app)
-                    entry = ("Disabled '" + app + "' from service '" +
-                             service + "'")
-                    if user:
-                        entry += " for user '" + user + "'."
-                    elif template:
-                        entry += " for the User Template."
-                    else:
-                        entry += "."
-                    logger.info(entry)
+                e.disable(app)
+        else:
+            logger.error("Invalid action '" + action + "'.")
 
 def version():
     '''Prints the version information.'''
@@ -215,16 +127,6 @@ class ArgumentParser(argparse.ArgumentParser):
         print("Error: {}\n".format(message))
         usage(short=True)
         self.exit(2)
-
-# def setup_logger(log, log_dest):
-#     global logger
-#     if not log:
-#         logger = loggers.stream_logger(1)
-#     else:
-#         if log_dest:
-#             logger = loggers.file_logger(attributes['name'], path=log_dest)
-#         else:
-#             logger = loggers.file_logger(attributes['name'])
 
 if __name__ == '__main__':
     '''Parse the command-line options since this was invoked as a script.'''
