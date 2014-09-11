@@ -5,7 +5,7 @@ import tcc_services
 attributes = {
     'long_name': "Privacy Services Manager",
     'name':      "privacy_services_manager",
-    'version':   "1.4.0a",
+    'version':   "1.4.0c",
 }
 
 # This is a list of services which can be modified.
@@ -59,13 +59,17 @@ class Output(object):
             else:
                 self.logger = loggers.file_logger(name)
 
-    def info(self, information):
-        print(information)
-        self.logger.info(information)
+    def info(self, information, print_out=True, log=True):
+        if print_out:
+            print(information)
+        if log:
+            self.logger.info(information)
 
-    def error(self, information):
-        print("Error: " + information)
-        self.logger.error(information)
+    def error(self, information, print_out=True, log=True):
+        if print_out:
+            print("Error: " + information)
+        if log:
+            self.logger.error(information)
 
 class NullOutput(object):
     '''Doesn't do anything. Just has the methods so that nobody gets upset.'''

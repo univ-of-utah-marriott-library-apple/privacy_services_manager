@@ -14,6 +14,31 @@ except ImportError as e:
     raise e
 
 def main(apps, service, action, user, template, language, logger):
+    # Output some information.
+    output = '#' * 80 + '\n' + version() + '''
+    service:  {service}
+    action:   {action}
+    app(s):   {apps}
+'''.format(
+        service = service,
+        action  = action,
+        apps    = apps
+)
+    if user:
+        output += '''\
+    user:     {user}
+'''.format(user = user)
+    else:
+        output += '''\
+    template: {template}
+    language: {language}
+'''.format(
+        template = template,
+        language = language
+)
+    logger.info(output, print_out = False)
+
+    # Do the actual modifying of the services.
     if len(apps) == 0:
         apps.append(None)
     with psm.universal.get_editor(service, user, template, language, logger) as e:
@@ -29,10 +54,13 @@ def main(apps, service, action, user, template, language, logger):
         else:
             logger.error("Invalid action '" + action + "'.")
 
+    # Notify of successful completion.
+    logger.info("Successfully completed.")
+
 def version():
     '''Prints the version information.'''
 
-    print(
+    return (
         "{name}, version {version}\n".format(
         name=psm.universal.attributes['long_name'],
         version=psm.universal.attributes['version'])
@@ -42,7 +70,7 @@ def usage(short=False):
     '''Usage information.'''
 
     if not short:
-        version()
+        print(version())
 
     print('''\
 usage: {name} [-hvn] [-l log] [-u user]
@@ -152,7 +180,6 @@ if __name__ == '__main__':
     elif args.version:
         version()
     else:
-        # setup_logger(log = not args.no_log, log_dest = args.log_dest)
         logger = psm.universal.Output(
             name     = psm.universal.attributes['name'],
             log      = not args.no_log,
@@ -164,21 +191,20 @@ if __name__ == '__main__':
         if not args.service:
             print("Error: Must specify a service to modify.")
             sys.exit(1)
-        main(
-            apps     = args.apps if args.apps else [],
-            service  = args.service,
-            action   = args.action,
-            user     = args.user,
-            template = args.template,
-            language = args.language,
-            logger   = logger,
-        )
-        # try:
-        # except:
-        #     message = (
-        #         str(sys.exc_info()[0].__name__) + ": " +
-        #         str(sys.exc_info()[1].message)
-        #     )
-        #     # print(message)
-        #     logger.error(message)
-        #     sys.exit(3)
+        try:
+            main(
+                apps     = args.apps if args.apps else [],
+                service  = args.service,
+                action   = args.action,
+                user     = args.user,
+                template = args.template,
+                language = args.language,
+                logger   = logger,
+            )
+        except:
+            message = (
+                str(sys.exc_info()[0].__name__) + ": " +
+                str(sys.exc_info()[1].message)
+            )
+            logger.error(message)
+            sys.exit(3)
