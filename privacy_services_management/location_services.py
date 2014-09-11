@@ -66,7 +66,7 @@ class LSEdit(object):
         # Services system.
         if not app:
             self.logger.info("Enabling service 'location' globally.")
-            enable_global(True, self.version)
+            enable_global(True, self.version, self.logger)
             self.logger.info("Globally enabled successfully.")
             return
 
@@ -107,7 +107,7 @@ class LSEdit(object):
         # Services system.
         if not app:
             self.logger.info("Disabling service 'location' globally...")
-            enable_global(False, self.version)
+            enable_global(False, self.version, self.logger)
             self.logger.info("Globally disabled successfully.")
             return
 
@@ -134,7 +134,7 @@ class LSEdit(object):
         # Services system.
         if not application:
             self.logger.info("Disabling service 'location' globally...")
-            enable_global(False, self.version)
+            enable_global(False, self.version, self.logger)
             self.logger.info("Globally disabled successfully.")
             return
 
@@ -166,8 +166,11 @@ class LSEdit(object):
         self.logger.info(
             "Disabled locationd system. (This is normal. DON'T PANIC.)")
 
-def enable_global(enable, version):
+def enable_global(enable, version, logger=None):
     '''Enables or disables the Location Services system globally.'''
+
+    if not logger:
+        logger = universal.NullOutput()
 
     try:
         value = int(enable)
@@ -177,6 +180,7 @@ def enable_global(enable, version):
     uuid = get_uuid()
     ls_dir = '/var/db/locationd/Library/Preferences/ByHost/'
     ls_plist = ls_dir + 'com.apple.locationd.' + str(uuid) + '.plist'
+    logger.info("Modifying global values in '" + ls_plist + "'.")
 
     if not os.path.isfile(ls_plist):
         ls_plist = None
@@ -207,7 +211,9 @@ def enable_global(enable, version):
                 ls_dir + 'com.apple.locationd.' + potentials[0] + '.plist'
             )
         else:
-            raise RuntimeError("No Location Services property list found.")
+            raise RuntimeError(
+                "No Location Services global property list found at '" +
+                ls_plist + "'.")
 
     if ls_plist:
         ls_plist = PlistEditor(ls_plist)
@@ -216,7 +222,9 @@ def enable_global(enable, version):
         else:
             ls_plist.write("LocationServicesEnabledIn7.0", value, "int")
     else:
-        raise RuntimeError("Could not locate Location Services plist file.")
+        raise RuntimeError(
+            "Could not locate Location Services plist file at '" +
+            ls_plist + "'.")
 
 def get_uuid():
     '''Acquire the UUID of the hardware.'''
