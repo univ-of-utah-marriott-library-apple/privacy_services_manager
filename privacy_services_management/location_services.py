@@ -34,8 +34,8 @@ class LSEdit(object):
         if os.geteuid() != 0:
             raise RuntimeError("Must be root to modify Location Services!")
 
-        # Check the version of OS X before continuing; only Darwin versions 12
-        # and above support the TCC database system.
+        # Check the version of OS X before continuing; only Darwin versions 10
+        # and above support the location services system.
         try:
             version = int(os.uname()[2].split('.')[0])
         except:
@@ -66,7 +66,7 @@ class LSEdit(object):
         # Services system.
         if not app:
             self.logger.info("Enabling service 'location' globally.")
-            enable_global(True, self.version, self.logger)
+            enable_global(True, self.logger)
             self.logger.info("Globally enabled successfully.")
             return
 
@@ -107,7 +107,7 @@ class LSEdit(object):
         # Services system.
         if not app:
             self.logger.info("Disabling service 'location' globally...")
-            enable_global(False, self.version, self.logger)
+            enable_global(False, self.logger)
             self.logger.info("Globally disabled successfully.")
             return
 
@@ -134,7 +134,7 @@ class LSEdit(object):
         # Services system.
         if not application:
             self.logger.info("Disabling service 'location' globally...")
-            enable_global(False, self.version, self.logger)
+            enable_global(False, self.logger)
             self.logger.info("Globally disabled successfully.")
             return
 
@@ -166,7 +166,7 @@ class LSEdit(object):
         self.logger.info(
             "Disabled locationd system. (This is normal. DON'T PANIC.)")
 
-def enable_global(enable, version, logger=None):
+def enable_global(enable, logger=None):
     '''Enables or disables the Location Services system globally.'''
 
     if not logger:
@@ -217,10 +217,7 @@ def enable_global(enable, version, logger=None):
 
     if ls_plist:
         ls_plist = PlistEditor(ls_plist)
-        if version < 14:
-            ls_plist.write("LocationServicesEnabled", value, "int")
-        else:
-            ls_plist.write("LocationServicesEnabledIn7.0", value, "int")
+        ls_plist.write("LocationServicesEnabled", value, "int")
     else:
         raise RuntimeError(
             "Could not locate Location Services plist file at '" +

@@ -178,7 +178,7 @@ if __name__ == '__main__':
     if args.help:
         usage()
     elif args.version:
-        version()
+        print(version())
     else:
         logger = psm.universal.Output(
             name     = psm.universal.attributes['name'],
