@@ -10,7 +10,7 @@ A single management utility to administer Location Services, Contacts requests, 
 * [Install](#install) - instructions for installing Privacy Services Manager
 * [Uninstall](#uninstall) - removal of Privacy Services Manager
 * [Purpose](#purpose) - what is this command for?
-* [History](#history) - how it came to be
+* [Background](#background) - how this script came to be
 * [Usage](#usage) - details of invocation
   * [Options](#options)
   * [Actions](#actions)
@@ -20,6 +20,7 @@ A single management utility to administer Location Services, Contacts requests, 
 * [Technical](#technical) - information on how it all works
   * [TCC Services](#tcc-services)
   * [Location Services](#location-services)
+* [Update History](#update-history) - version information to see what got put in when
 
 ## Contact
 
@@ -34,7 +35,7 @@ If you have any comments, questions, or other input, either [file an issue](../.
 
 ### OS X 10.10 "Yosemite" Notes
 
-OS X Yosemite is not fully supported yet. Accessibility and Contacts both have full functionality, but Location Services has changed slightly since OS X 10.9. Applications can be added, removed, enabled, and disabled perfectly fine, but the global settings do not work properly. I will update soon to support this functionality.
+OS X Yosemite is now fully supported (from Developer Preview 7 onward). If you find any irregularites or anomalies, please [contact us](#contact). Thank you!
 
 ## Install
 
@@ -54,7 +55,7 @@ At the end it will say "Installation Successful" but don't believe it - this wil
 
 This script will help you to manually adjust the values in the various security and privacy databases in Apple's Mac OS X. This means you can give or restrict access to any of the supported services manually via the terminal, instead of having to run whatever application and wait for it to poll the system for permission. In particular this is useful in an administrated lab environment, such as the university where it was first deployed, as it allows the administrators to prematurely grant access to certain applications without the users needing to request permission. This is especially helpful because some services (Location Services, Accessibility) require privileged (root) access to complete the request, which regular users do not have.
 
-## History
+## Background
 
 Since Mac OS X 10.8 "Mountain Lion", Apple has introduced systems to handle access to certain features of the computer. Among these are Contacts (AddressBook), iCloud (Ubiquity), Accessibility, and Location Services. The first three are managed through one method (SQLite databases called `TCC.db` hidden throughout the system), while the latter is handled by the `locationd` daemon through property list files. Originally I created two separate scripts to accommodate the manual modification of these systems. However, eventually I realized that while the internal workings were different, the desired effect was more or less the same. This Privacy Services Manager is a compilation (and mild reformation) of those two scripts.
 
@@ -233,3 +234,20 @@ Location Services stores all of its preferences in property list files (files wi
 If you've worked with plist files before in OS X 10.9 "Mavericks", then you know that they cannot be modified through direct text editing like previous versions of OS X.  Mavericks caches various plist preferences and writes asynchronously to disk.  This means that if you were to open `foo.plist` in your favorite plaintext editor (ne, nano, vi, etc.) and modify the key `bar`, there is no guarantee that it would keep the value you assigned it!  This is not ideal.  Instead, Apple insists that you use the `defaults` command to modify plist values directly.  `defaults` is supposed to write the changes, and then synchronize the caches with the new values to maintain whatever it is you wrote to them.
 
 This section of the script is essentially an interface to the `defaults` command.  This is fast and reliable, and even better is that `defaults` is officially supported, which means it shouldn't be going away any time soon.
+
+## Update History
+
+This is a reverse-chronological list of updates to this project.
+
+| Date | Version | Update |
+|------|---------|--------|
+| 2014-09-11 | 1.4.0 | Finished verbosity updates. Now very informational. Bugfixes to address Yosemite issue. |
+| 2014-09-05 | 1.3.1 | First update for increased verbosity of console output and file logging. Easier to see what exactly is going on. |
+| 2014-08-14 | 1.3.0 | Yosemite Update. Now (mostly) functional on OS X 10.10 "Yosemite". Some issues with global location services toggling. |
+| 2014-07-16 | 1.2.4 | Bug fix: usage of name `bid` in code undefined. |
+| 2014-06-26 | 1.2.3 | New packaging format: .pkg files distributed in .dmg. |
+| 2014-06-25 | 1.2.3 | Bug fix: more robust ability to find location services plist files. Also updated documentation. |
+| 2014-06-24 | 1.1 | The script now comes in an easy-to-use package installer. Help documentation updated. |
+| 2014-06-20 | 1.0 | Ability to 'disable' applications added. Usage information (`--help`) and documentation updated. |
+| 2014-06-19 | 0.7 | After rewriting the TCC database and Location Services modules, editor classes were created for simpler integration. |
+| Pre-2014-06-18 | 0.1 | Decision made to combine *TCC Database Manager* and *Location Services Manager* projects. |
