@@ -13,7 +13,7 @@ except ImportError as e:
         "management_tools")
     raise e
 
-def main(apps, service, action, user, template, language, logger):
+def main(apps, service, action, user, template, language, logger, forceroot):
     # Output some information.
     output = '#' * 80 + '\n' + version() + '''
     service:  {service}
@@ -41,7 +41,13 @@ def main(apps, service, action, user, template, language, logger):
     # Do the actual modifying of the services.
     if len(apps) == 0:
         apps.append(None)
-    with psm.universal.get_editor(service, user, template, language, logger) as e:
+    with psm.universal.get_editor(
+        service   = service,
+        user      = user,
+        template  = template,
+        lang      = language,
+        logger    = logger,
+        forceroot = forceroot) as e:
         if action == 'add' or action == 'enable':
             for app in apps:
                 e.insert(app)
@@ -89,6 +95,9 @@ Accessibility, and Locations.
     --template
         Modify access only for Apple's User Template. Only applies to certain
         services.
+    --forceroot
+        Force the script to allow the creation or modification of the root
+        user's own TCC database file.
 
     -l log, --log-dest log
         Redirect log output to 'log'.
@@ -167,6 +176,7 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--user', default='')
     parser.add_argument('--template', action='store_true')
     parser.add_argument('--language', default='English')
+    parser.add_argument('--forceroot', action='store_true')
     parser.add_argument('action', nargs='?',
                         choices=['add', 'remove', 'enable', 'disable'],
                         default=None)
@@ -193,13 +203,14 @@ if __name__ == '__main__':
             sys.exit(1)
         try:
             main(
-                apps     = args.apps if args.apps else [],
-                service  = args.service,
-                action   = args.action,
-                user     = args.user,
-                template = args.template,
-                language = args.language,
-                logger   = logger,
+                apps      = args.apps if args.apps else [],
+                service   = args.service,
+                action    = args.action,
+                user      = args.user,
+                template  = args.template,
+                language  = args.language,
+                logger    = logger,
+                forceroot = args.forceroot,
             )
         except:
             message = (

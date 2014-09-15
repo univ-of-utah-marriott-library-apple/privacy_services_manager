@@ -78,6 +78,7 @@ For a brief tutorial, skip ahead to the [Simple Usage Walkthrough](#simple-usage
 | `-v`, `--version` | Prints version information and quits. |
 | `-n`, `--no-log` | Redirects logging to standard output (stdout, i.e. the console). |
 | `--template` | Modify privacy services for Apple's User Template. Only applies to certain services. |
+| `--forceroot` | Force the script to allow the creation/modification of the root user's own TCC database file. |
 | `-l log`, `--log-dest log` | Redirect logging to the specified file. (This can be overridden by `--no-log`.) |
 | `-u user`, `--user user` | Modify privacy services for a specific user named "`user`". (Requires root privileges.) |
 | `--language lang` | When changing privacy services for the Apple's User Template, modify the `lang` template. (Apple provides many User Template folder for different languages.) |

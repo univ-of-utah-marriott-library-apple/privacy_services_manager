@@ -31,10 +31,11 @@ class TCCEdit(object):
     def __init__(
         self,
         service,
-        user     = '',
-        template = False,
-        lang     = 'English',
-        logger   = None
+        user      = '',
+        template  = False,
+        lang      = 'English',
+        logger    = None,
+        forceroot = False,
     ):
         # Set the logger for output.
         if logger:
@@ -76,14 +77,25 @@ class TCCEdit(object):
                 "Set to modify local permissions for the '" + lang +
                 "' User Template at ")
         else:
-            self.local_path = os.path.expanduser(
-                '~' +
-                user +
-                '/Library/Application Support/com.apple.TCC/TCC.db'
-            )
-            local_log_entry = (
-                "Set to modify local permissions for user '" + user + "' at "
-            )
+            if user == 'root' and not forceroot:
+                # Prevent the root user from creating or modifying their own
+                # local TCC database. This is to prevent confusion. The file
+                # can be forced to be used by the `--forceroot` option.
+                error = '''\
+Will not create a TCC database file for root.
+        This is generally not helpful, and there is no good reason to do it.
+        If you really want to create a TCC database file for root, run the
+        command with the `--forceroot` option.'''
+                raise ValueError(error)
+            else:
+                self.local_path = os.path.expanduser(
+                    '~' +
+                    user +
+                    '/Library/Application Support/com.apple.TCC/TCC.db'
+                )
+                local_log_entry = (
+                    "Set to modify local permissions for user '" + user + "' at "
+                )
 
         # Check the user didn't supply a bad username.
         if not self.local_path.startswith('/'):
@@ -109,6 +121,19 @@ class TCCEdit(object):
         if os.geteuid() == 0 and not os.path.exists(self.root_path):
             self.__create(self.root_path)
         if not os.path.exists(self.local_path):
+#             if os.geteuid() == 0 and not forceroot:
+#                 # Don't let root have a TCC database.
+#                 # Change above 'if' to:
+#                 #   if os.geteuid() == 0 and not rootforce
+#                 # where 'rootforce' is a boolean that can be toggled
+#                 # at invocation.
+#                 error = '''\
+# Will not create a TCC database file for root.
+#         This is generally not helpful, and there is no good reason to do it.
+#         If you really want to create a TCC database file for root, run the
+#         command with the `--forceroot` option.'''
+#                 raise ValueError(error)
+#             else:
             self.__create(self.local_path)
 
         # Check there is write access to user's local TCC database.
