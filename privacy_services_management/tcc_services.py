@@ -83,9 +83,19 @@ class TCCEdit(object):
                 # can be forced to be used by the `--forceroot` option.
                 error = '''\
 Will not create a TCC database file for root.
-        This is generally not helpful, and there is no good reason to do it.
-        If you really want to create a TCC database file for root, run the
-        command with the `--forceroot` option.'''
+
+Creating a TCC database for the root user is generally not helpful, and
+there is really no good reason to do it.
+
+If you intended to change the permissions for a particular user as root,
+instead use the `--user` option. For example:
+
+    privacy_services_manager.py --user "username" add contacts com.apple.Safari
+    
+If you really want to create a TCC database file for root, run the
+command with the `--forceroot` option:
+
+    privacy_services_manager.py --forceroot add contacts com.apple.Safari'''
                 raise ValueError(error)
             else:
                 self.local_path = os.path.expanduser(
@@ -121,19 +131,6 @@ Will not create a TCC database file for root.
         if os.geteuid() == 0 and not os.path.exists(self.root_path):
             self.__create(self.root_path)
         if not os.path.exists(self.local_path):
-#             if os.geteuid() == 0 and not forceroot:
-#                 # Don't let root have a TCC database.
-#                 # Change above 'if' to:
-#                 #   if os.geteuid() == 0 and not rootforce
-#                 # where 'rootforce' is a boolean that can be toggled
-#                 # at invocation.
-#                 error = '''\
-# Will not create a TCC database file for root.
-#         This is generally not helpful, and there is no good reason to do it.
-#         If you really want to create a TCC database file for root, run the
-#         command with the `--forceroot` option.'''
-#                 raise ValueError(error)
-#             else:
             self.__create(self.local_path)
 
         # Check there is write access to user's local TCC database.
