@@ -77,10 +77,16 @@ class TCCEdit(object):
                 "Set to modify local permissions for the '" + lang +
                 "' User Template at ")
         else:
-            if user == 'root' and not forceroot:
+            if (user == 'root' and
+                not forceroot and
+                available_services[service][1] != 'root'):
                 # Prevent the root user from creating or modifying their own
                 # local TCC database. This is to prevent confusion. The file
                 # can be forced to be used by the `--forceroot` option.
+                #
+                # If the service being modified is root-level, don't bother
+                # checking for the local TCC database file because it is
+                # irrelevant.
                 error = '''\
 Will not create a TCC database file for root.
 
@@ -131,12 +137,16 @@ command with the `--forceroot` option:
         if os.geteuid() == 0 and not os.path.exists(self.root_path):
             self.__create(self.root_path)
         if not os.path.exists(self.local_path):
-            self.__create(self.local_path)
+            if (user == 'root' and forceroot) or user != 'root':
+                self.__create(self.local_path)
 
         # Check there is write access to user's local TCC database.
         if not os.access(self.local_path, os.W_OK):
-            raise ValueError("You do not have permission to modify " + user +
-                             "'s TCC database.")
+            if (user == 'root' and forceroot) or user != 'root':
+                raise ValueError(
+                    "You do not have permission to modify " + user +
+                    "'s TCC database."
+                )
 
         # Create the connections.
         # Only root may modify the global TCC database.
@@ -144,7 +154,10 @@ command with the `--forceroot` option:
             self.root = sqlite3.connect(self.root_path)
         else:
             self.root = None
-        self.local = sqlite3.connect(self.local_path)
+        if os.geteuid() != 0 or (os.geteuid() == 0 and forceroot):
+            self.local = sqlite3.connect(self.local_path)
+        else:
+            self.local = None
         self.connections = {'root': self.root, 'local': self.local}
 
     def __enter__(self):
@@ -396,4 +409,5 @@ command with the `--forceroot` option:
 
         if self.root:
             self.root.close()
-        self.local.close()
+        if self.local:
+            self.local.close()
