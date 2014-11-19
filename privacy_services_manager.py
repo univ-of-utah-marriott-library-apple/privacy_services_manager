@@ -83,7 +83,7 @@ usage: {name} [-hvn] [-l log] [-u user]
          [--template] [--language] action service applications
 
 Modify access to the various privacy services of OS X, such as Contacts, iCloud,
-Accessibility, and Locations.
+Accessibility, Calendars, Reminders, and Locations.
 
     -h, --help
         Prints this help message and quits.
@@ -131,6 +131,12 @@ SERVICE
         Permission to modify system-level settings. Applications that integrate
         with your desktop require accessibility access.
         NOTE: Must be modified by root.
+    calendar
+        Modify access to your Calendar. This can be used by applications that
+        want to set up recurring tasks or perform scheduling.
+    reminders
+        Allow applications to send you reminders. Permission to use this service
+        is often requested along with 'calendar' access.
     icloud
         Permission to access iCloud storage? Unsure exactly - currently this is
         only used by Apple-built applications.
