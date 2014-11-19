@@ -98,9 +98,11 @@ There are three* services that can be modified:
 
 1. `contacts` handles requests to access a user's address book. Many web browsers use this to store login information for various websites. This service is handled on a per-user basis, so any user has the ability to modify this service for themselves.
 2. `accesibility` deals with behind-the-scenes systems that Apple believes require extra privileges to enable. Applications that interface with your computer experience, such as BetterSnapTool or the Steam in-game overlay, require access through this service. These privileges must be granted by a privileged user via `sudo`.
-3. `location` manages any application that desires to report on your physical location. Apple's own Maps application will request access to this, as well as web browsers once you visit a website that asks for your location (such as Google Maps). This system must also be handled by a privileges user via `sudo`.
+3. `calendar` is the service responsible for allowing applications to inject events into your calendar. This can be used to schedule recurring events, among other things.
+4. `reminders` gives an application the ability to access your Reminders (which are usually handled manually via the Reminders application).
+5. `location` manages any application that desires to report on your physical location. Apple's own Maps application will request access to this, as well as web browsers once you visit a website that asks for your location (such as Google Maps). This system must also be handled by a privileges user via `sudo`.
 
-\*There is actually a fourth service, called "Ubiquity" that can be administered with Privacy Services Manager, though it is referred to as `icloud` in the script (to ensure that you realize what it's accessing). It can be modified by non-privileged users for themselves, like `contacts`. Applications that request permissions with this service want to be able to access a user's iCloud storage and settings. Examples would be any text editing application that is able to save to your iCloud, such as TextEdit or iA Writer. Because of the nature of this request (access to a user's personal files and settings), I recommend against setting this service's permissions manually. This service is not as thoroughly tested.
+\*There is actually a sixth service, called "Ubiquity" that can be administered with Privacy Services Manager, though it is referred to as `icloud` in the script (to ensure that you realize what it's accessing). It can be modified by non-privileged users for themselves, like `contacts`. Applications that request permissions with this service want to be able to access a user's iCloud storage and settings. Examples would be any text editing application that is able to save to your iCloud, such as TextEdit or iA Writer. Because of the nature of this request (access to a user's personal files and settings), I recommend against setting this service's permissions manually. This service is not as thoroughly tested.
 
 ### Applications
 
@@ -241,7 +243,8 @@ This section of the script is essentially an interface to the `defaults` command
 This is a reverse-chronological list of updates to this project.
 
 | Date | Version | Update |
-|------|---------|--------|
+|------|:-------:|--------|
+| 2014-09-19 | 1.5.0 | Updated to include the `calendar` and `reminders` services. Updated documentation to reflect these changes. |
 | 2014-09-11 | 1.4.0 | Finished verbosity updates. Now very informational. Bugfixes to address Yosemite issue. |
 | 2014-09-05 | 1.3.1 | First update for increased verbosity of console output and file logging. Easier to see what exactly is going on. |
 | 2014-08-14 | 1.3.0 | Yosemite Update. Now (mostly) functional on OS X 10.10 "Yosemite". Some issues with global location services toggling. |
