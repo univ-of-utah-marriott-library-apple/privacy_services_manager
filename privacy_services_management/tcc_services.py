@@ -14,7 +14,9 @@ except ImportError as e:
 available_services = {
     'accessibility': ('kTCCServiceAccessibility', 'root',  13),
     'contacts':      ('kTCCServiceAddressBook',   'local', 12),
-    'icloud':        ('kTCCServiceUbiquity',      'local', 13)
+    'icloud':        ('kTCCServiceUbiquity',      'local', 13),
+    'calendar':      ('kTCCServiceCalendar',      'local', 13),
+    'reminders':     ('kTCCServiceReminders',     'local', 13)
 }
 
 class TCCEdit(object):
@@ -97,7 +99,7 @@ If you intended to change the permissions for a particular user as root,
 instead use the `--user` option. For example:
 
     privacy_services_manager.py --user "username" add contacts com.apple.Safari
-    
+
 If you really want to create a TCC database file for root, run the
 command with the `--forceroot` option:
 
