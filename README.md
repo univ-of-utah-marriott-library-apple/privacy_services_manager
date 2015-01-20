@@ -97,7 +97,7 @@ There are four actions available:
 There are three* services that can be modified:
 
 1. `contacts` handles requests to access a user's address book. Many web browsers use this to store login information for various websites. This service is handled on a per-user basis, so any user has the ability to modify this service for themselves.
-2. `accesibility` deals with behind-the-scenes systems that Apple believes require extra privileges to enable. Applications that interface with your computer experience, such as BetterSnapTool or the Steam in-game overlay, require access through this service. These privileges must be granted by a privileged user via `sudo`.
+2. `accessibility` deals with behind-the-scenes systems that Apple believes require extra privileges to enable. Applications that interface with your computer experience, such as BetterSnapTool or the Steam in-game overlay, require access through this service. These privileges must be granted by a privileged user via `sudo`.
 3. `calendar` is the service responsible for allowing applications to inject events into your calendar. This can be used to schedule recurring events, among other things.
 4. `reminders` gives an application the ability to access your Reminders (which are usually handled manually via the Reminders application).
 5. `location` manages any application that desires to report on your physical location. Apple's own Maps application will request access to this, as well as web browsers once you visit a website that asks for your location (such as Google Maps). This system must also be handled by a privileges user via `sudo`.
