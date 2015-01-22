@@ -13,7 +13,8 @@ except ImportError as e:
         "management_tools")
     raise e
 
-def main(apps, service, action, user, template, language, logger, forceroot):
+def main(apps, service, action, user, template, language, logger, forceroot,
+         admin):
     # Output some information.
     output = '#' * 80 + '\n' + version() + '''
     service:  {service}
@@ -98,6 +99,11 @@ Accessibility, Calendars, Reminders, and Locations.
     --forceroot
         Force the script to allow the creation or modification of the root
         user's own TCC database file.
+    --admin
+        Enables administrative override, which allows you to modify TCC services
+        for non-bundled applications (such as binary programs used from the
+        command line). This ONLY works with TCC services; Location Services
+        requires more information to modify its plist.
 
     -l log, --log-dest log
         Redirect log output to 'log'.
@@ -183,6 +189,7 @@ if __name__ == '__main__':
     parser.add_argument('--template', action='store_true')
     parser.add_argument('--language', default='English')
     parser.add_argument('--forceroot', action='store_true')
+    parser.add_argument('--admin', action='store_true')
     parser.add_argument('action', nargs='?',
                         choices=['add', 'remove', 'enable', 'disable'],
                         default=None)
@@ -207,6 +214,8 @@ if __name__ == '__main__':
         if not args.service:
             print("Error: Must specify a service to modify.")
             sys.exit(1)
+        if args.admin:
+            logger.info("Administrative override enabled. Be careful!")
         try:
             main(
                 apps      = args.apps if args.apps else [],
@@ -217,6 +226,7 @@ if __name__ == '__main__':
                 language  = args.language,
                 logger    = logger,
                 forceroot = args.forceroot,
+                admin     = args.admin,
             )
         except:
             message = (
