@@ -79,6 +79,7 @@ For a brief tutorial, skip ahead to the [Simple Usage Walkthrough](#simple-usage
 | `-n`, `--no-log` | Redirects logging to standard output (stdout, i.e. the console). |
 | `--template` | Modify privacy services for Apple's User Template. Only applies to certain services. |
 | `--forceroot` | Force the script to allow the creation/modification of the root user's own TCC database file. |
+| `--admin` | Enable administrative override to modify TCC services for non-bundled applications. This is *NOT* recommended as it can open unforseen vulnerabilities. |
 | `-l log`, `--log-dest log` | Redirect logging to the specified file. (This can be overridden by `--no-log`.) |
 | `-u user`, `--user user` | Modify privacy services for a specific user named "`user`". (Requires root privileges.) |
 | `--language lang` | When changing privacy services for the Apple's User Template, modify the `lang` template. (Apple provides many User Template folder for different languages.) |
@@ -244,6 +245,7 @@ This is a reverse-chronological list of updates to this project.
 
 | Date | Version | Update |
 |------|:-------:|--------|
+| 2015-01-22 | 1.5.1 | Now allows use of `--admin` to modify TCC services for non-bundled applications. |
 | 2014-09-19 | 1.5.0 | Updated to include the `calendar` and `reminders` services. Updated documentation to reflect these changes. |
 | 2014-09-11 | 1.4.0 | Finished verbosity updates. Now very informational. Bugfixes to address Yosemite issue. |
 | 2014-09-05 | 1.3.1 | First update for increased verbosity of console output and file logging. Easier to see what exactly is going on. |

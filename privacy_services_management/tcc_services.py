@@ -38,6 +38,7 @@ class TCCEdit(object):
         lang      = 'English',
         logger    = None,
         forceroot = False,
+        admin     = False,
     ):
         # Set the logger for output.
         if logger:
@@ -176,7 +177,15 @@ command with the `--forceroot` option:
         if app is None:
             return
         else:
-            bid = AppInfo(app).bid
+            # If the user has specified the `--admin` option, don't try to find
+            # an actual application. This allows the adding of *any* file to the
+            # database. Useful for some administration environments.
+            if self.admin:
+                bid = app
+            else:
+            # Otherwise, attempt to get the bundle identifier from the
+            # application.
+                bid = AppInfo(app).bid
         if service is None and self.service:
             service = self.service
         else:
@@ -238,7 +247,15 @@ command with the `--forceroot` option:
         if app is None:
             return
         else:
-            bid = AppInfo(app).bid
+            # If the user has specified the `--admin` option, don't try to find
+            # an actual application. This allows the adding of *any* file to the
+            # database. Useful for some administration environments.
+            if self.admin:
+                bid = app
+            else:
+            # Otherwise, attempt to get the bundle identifier from the
+            # application.
+                bid = AppInfo(app).bid
         if service is None and self.service:
             service = self.service
         else:
@@ -282,7 +299,15 @@ command with the `--forceroot` option:
         if app is None:
             return
         else:
-            bid = AppInfo(app).bid
+            # If the user has specified the `--admin` option, don't try to find
+            # an actual application. This allows the adding of *any* file to the
+            # database. Useful for some administration environments.
+            if self.admin:
+                bid = app
+            else:
+            # Otherwise, attempt to get the bundle identifier from the
+            # application.
+                bid = AppInfo(app).bid
         if service is None and self.service:
             service = self.service
         else:
