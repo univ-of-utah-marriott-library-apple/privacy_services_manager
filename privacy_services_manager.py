@@ -4,17 +4,16 @@ import argparse
 import privacy_services_management as psm
 import sys
 
+# Check that management_tools is installed.
 try:
+    from management_tools import loggers
     from management_tools.app_info import AppInfo
 except ImportError as e:
-    print("You need the 'Management Tools' module to be installed first.")
-    print(
-        "https://github.com/univ-of-utah-marriott-library-apple/" +
-        "management_tools")
+    print("You need version 1.6.0 or greater of the 'Management Tools' module to be installed first.")
+    print("https://github.com/univ-of-utah-marriott-library-apple/management_tools")
     raise e
 
-def main(apps, service, action, user, template, language, logger, forceroot,
-         admin):
+def main(apps, service, action, user, template, language, logger, forceroot, admin):
     # Output some information.
     output = '#' * 80 + '\n' + version() + '''
     service:  {service}
@@ -44,11 +43,13 @@ def main(apps, service, action, user, template, language, logger, forceroot,
         apps.append(None)
     with psm.universal.get_editor(
         service   = service,
+        logger    = logger,
         user      = user,
         template  = template,
         lang      = language,
-        logger    = logger,
-        forceroot = forceroot) as e:
+        forceroot = forceroot,
+        admin     = admin
+    ) as e:
         if action == 'add' or action == 'enable':
             for app in apps:
                 e.insert(app)
@@ -65,8 +66,9 @@ def main(apps, service, action, user, template, language, logger, forceroot,
     logger.info("Successfully completed.")
 
 def version():
-    '''Prints the version information.'''
-
+    """
+    :return: the version information for this program
+    """
     return (
         "{name}, version {version}\n".format(
         name=psm.universal.attributes['long_name'],
@@ -74,7 +76,9 @@ def version():
     )
 
 def usage(short=False):
-    '''Usage information.'''
+    """
+    Prints out usage information.
+    """
 
     if not short:
         print(version())
@@ -100,10 +104,9 @@ Accessibility, Calendars, Reminders, and Locations.
         Force the script to allow the creation or modification of the root
         user's own TCC database file.
     --admin
-        Enables administrative override, which allows you to modify TCC services
+        Enables administrative override, which allows you to modify services
         for non-bundled applications (such as binary programs used from the
-        command line). This ONLY works with TCC services; Location Services
-        requires more information to modify its plist.
+        command line).
 
     -l log, --log-dest log
         Redirect log output to 'log'.
@@ -170,16 +173,19 @@ APPLICATIONS
 ''')
 
 class ArgumentParser(argparse.ArgumentParser):
-    '''I like my own style of error-handling, thank you.'''
-
+    """
+    Custom argument parser for handling error messages nicely.
+    """
     def error(self, message):
         print("Error: {}\n".format(message))
         usage(short=True)
         self.exit(2)
 
+#---------------------#
+# Program Entry Point #
+#---------------------#
 if __name__ == '__main__':
-    '''Parse the command-line options since this was invoked as a script.'''
-
+    # Create an argument parser and the valid arguments.
     parser = ArgumentParser(add_help=False)
     parser.add_argument('-h', '--help', action='store_true')
     parser.add_argument('-v', '--version', action='store_true')
@@ -196,42 +202,54 @@ if __name__ == '__main__':
     parser.add_argument('service', nargs='?',
                         choices=psm.universal.available_services)
     parser.add_argument('apps', nargs=argparse.REMAINDER)
+    
+    # Parse the arguments.
     args = parser.parse_args()
 
+    # Print help information and quit.
     if args.help:
         usage()
-    elif args.version:
+        sys.exit(0)
+    
+    # Print version information and quit.
+    if args.version:
         print(version())
-    else:
-        logger = psm.universal.Output(
-            name     = psm.universal.attributes['name'],
-            log      = not args.no_log,
-            log_dest = args.log_dest
+        sys.exit(0)
+
+    # Set up the logger.
+    logger = loggers.get_logger(
+        name = psm.universal.attributes['name'],
+        log  = not args.no_log,
+        path = args.log_dest
+    )
+    
+    # Perform checks for necessary bits of information.
+    if not args.action:
+        print("Error: Must specify an action.")
+        sys.exit(1)
+    if not args.service:
+        print("Error: Must specify a service to modify.")
+        sys.exit(1)
+    if args.admin:
+        logger.warn("Administrative override enabled. Be careful!")
+        
+    # Run the program!
+    try:
+        main(
+            apps      = args.apps if args.apps else [],
+            service   = args.service,
+            action    = args.action,
+            user      = args.user,
+            template  = args.template,
+            language  = args.language,
+            logger    = logger,
+            forceroot = args.forceroot,
+            admin     = args.admin,
         )
-        if not args.action:
-            print("Error: Must specify an action.")
-            sys.exit(1)
-        if not args.service:
-            print("Error: Must specify a service to modify.")
-            sys.exit(1)
-        if args.admin:
-            logger.info("Administrative override enabled. Be careful!")
-        try:
-            main(
-                apps      = args.apps if args.apps else [],
-                service   = args.service,
-                action    = args.action,
-                user      = args.user,
-                template  = args.template,
-                language  = args.language,
-                logger    = logger,
-                forceroot = args.forceroot,
-                admin     = args.admin,
-            )
-        except:
-            message = (
-                str(sys.exc_info()[0].__name__) + ": " +
-                str(sys.exc_info()[1].message)
-            )
-            logger.error(message)
-            sys.exit(3)
+    except:
+        message = (
+            str(sys.exc_info()[0].__name__) + ": " +
+            str(sys.exc_info()[1].message)
+        )
+        logger.error(message)
+        sys.exit(3)

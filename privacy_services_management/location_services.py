@@ -6,29 +6,25 @@ try:
     from management_tools.plist_editor import PlistEditor
     from management_tools.app_info import AppInfo
 except ImportError as e:
-    print("You need the 'Management Tools' module to be installed first.")
-    print(
-        "https://github.com/univ-of-utah-marriott-library-apple/" +
-        "management_tools")
+    print("You need version 1.6.0 or greater of the 'Management Tools' module to be installed first.")
+    print("https://github.com/univ-of-utah-marriott-library-apple/management_tools")
     raise e
 
 class LSEdit(object):
-    '''A class to help with editing Location Services. This ought to be used
-    in a 'with' statement to ensure proper updating of the locationd system e.g.
-
-    with LSEdit() as e:
-        # do some stuff to the database
-        e.foo()
-    # do more stuff to other things
-    bar(baz)
-    '''
-
-    def __init__(self, logger=None):
+    """
+    Provides a class for modifying the Location Services permissions. This class
+    was designed to be used in a 'with' statement to ensure proper updating of
+    the locationd system. For example:
+    
+        with LSEdit() as e:
+            # do some stuff to the database
+            e.foo()
+        # do more stuff
+        bar(baz)
+    """
+    def __init__(self, logger, admin=False):
         # Set the logger for output.
-        if logger:
-            self.logger = logger
-        else:
-            self.logger = universal.NullOutput()
+        self.logger = logger
 
         # Only root may modify the Location Services system.
         if os.geteuid() != 0:
@@ -41,8 +37,7 @@ class LSEdit(object):
         except:
             raise RuntimeError("Could not acquire the OS X version.")
         if version < 10:
-            raise RuntimeError(
-                "Location Services is not supported in this version of OS X.")
+            raise RuntimeError("Location Services is not supported in this version of OS X.")
         self.version = version
 
         # Disable the locationd launchd item. (Changes will not be properly
@@ -50,36 +45,109 @@ class LSEdit(object):
         self.__disable()
         # This is where the applications' authorizations are stored.
         self.plist = PlistEditor('/var/db/locationd/clients')
-        self.logger.info(
-            "Modifying service 'location' at '" + self.plist.path + "'.")
+        self.logger.info("Modifying service 'location' at '{}'.".format(self.plist.path))
 
-    def __enter__(self):
-        return self
-
-    def insert(self, app):
-        '''Insert 'app' and enable it for Location Services.
-
-        app - an application identifier (bid, short name, location, etc.)
-        '''
-
+    def insert(self, target):
+        """
+        Enable the specified target for location services.
+        
+        :param target: an application or file to modify permissions for
+        """
         # If no application is given, then we're modifying the global Location
         # Services system.
-        if not app:
+        if not target:
             self.logger.info("Enabling service 'location' globally.")
             enable_global(True, self.logger)
             self.logger.info("Globally enabled successfully.")
             return
+        
+        # If we're in admin mode, we can't look up the application as a bundle.
+        if self.admin:
+            self.__insert_executable(target)
+        else:
+            self.__insert_app(target)
 
-        app = AppInfo(app)
+    def remove(self, target):
+        """
+        Remove an item from Location Services. If no item is given, then disable
+        Location Services globally.
+
+        :param target: an application or file to modify permissions for
+        """
+        # If no application is given, then we're modifying the global Location
+        # Services system.
+        if not target:
+            self.logger.info("Disabling service 'location' globally...")
+            enable_global(False, self.logger)
+            self.logger.info("Globally disabled successfully.")
+            return
+        
+        if self.admin:
+            name   = target
+            target = 'com.apple.locationd.executable-{}'.format(target)
+        else:
+            name   = AppInfo(target).name
+            target = AppInfo(target).bid
+
+        # Verbosity
+        self.logger.info("Removing '{}' from service 'location'...".format(target))
+
+        # Otherwise, just delete its entry in the plist.
+        result = self.plist.delete(target)
+        if result:
+            raise RuntimeError("Failed to remove {}.".format(name))
+        self.logger.info("Removed successfully.")
+
+    def disable(self, target):
+        """
+        Mark the application or file as being disallowed from utilizing Location
+        Services. If the target is not already in the plist, it will be added
+        and then disabled.
+
+        :param target: an application or file to modify permissions for
+        """
+        # If no application is given, then we're modifying the global Location
+        # Services system.
+        if not target:
+            self.logger.info("Disabling service 'location' globally...")
+            enable_global(False, self.logger)
+            self.logger.info("Globally disabled successfully.")
+            return
+
+        if self.admin:
+            name   = target
+            target = 'com.apple.locationd.executable-{}'.format(target)
+        else:
+            name   = AppInfo(target).name
+            target = AppInfo(target).bid
+
+        # Verboseness
+        self.logger.info("Disabling '{}' in service 'location'...".format(target))
+
+        # If the application isn't already in locationd, add it.
+        if not self.plist.read(target):
+            self.insert(target)
+
+        # Then deauthorize the application.
+        result = self.plist.dict_add(target, "Authorized", "FALSE", "bool")
+        if result:
+            raise RuntimeError("Failed to disable {}.".format(name))
+        self.logger.info("Disabled successfully.")
+
+    def __insert_app(self, target):
+        """
+        Inserts the specified target application into the locationd plist.
+        """
+        # Get the AppInfo object for more information.
+        app = AppInfo(target)
 
         # Verbosity!
-        self.logger.info("Inserting '" + app.bid + "' into service 'location'...")
+        self.logger.info("Inserting '{}' into service 'location'...".format(app.bid))
 
         # This is used for... something. Don't know what, but it's necessary.
-        requirement = (
-            "identifier \"" + app.bid + "\" and anchor " +
-            app.bid.split('.')[1]
-        )
+        requirement = ("identifier \"{}\" and anchor {}".format(
+            app.bid, app.bid.split('.')[1]
+        ))
 
         # Write the changes to the locationd plist.
         result = 0
@@ -94,96 +162,86 @@ class LSEdit(object):
         result += self.plist.dict_add(app.bid, "Whitelisted", "FALSE", "bool")
         if result:
             # Clearly there was an error...
-            raise RuntimeError("Failed to insert " + app.name + ".")
+            raise RuntimeError("Failed to insert {}.".format(app.name))
         self.logger.info("Inserted successfully.")
 
-    def remove(self, app):
-        '''Remove 'app' from Location Services.
-
-        app - an application identifier
-        '''
-
-        # If no application is given, then we're modifying the global Location
-        # Services system.
-        if not app:
-            self.logger.info("Disabling service 'location' globally...")
-            enable_global(False, self.logger)
-            self.logger.info("Globally disabled successfully.")
-            return
-
-        app = AppInfo(app)
-
-        # Verbosity
-        self.logger.info("Removing '" + app.bid + "' from service 'location'...")
-
-        # Otherwise, just delete its entry in the plist.
-        result = self.plist.delete(app.bid)
+    def __insert_executable(self, target):
+        """
+        Inserts the specified target executable into the locationd plist.
+        """
+        # Verbosity!
+        self.logger.info("Inserting executable '{}' into service 'location'...".format(target))
+        
+        # Reformat the target name.
+        key = 'com.apple.locationd.executable-{}'.format(target)
+        
+        # Build the requirement string.
+        # I'm actually not sure how to get the cdhash, so for now this is
+        # commented out. It may not be necessary.
+        # requirement = ("cdhash H\"{cdhash}\"")
+        
+        # Write the changes to the locationd plist.
+        result = 0
+        result += self.plist.dict_add(key, "Authorized", "TRUE", "bool")
+        result += self.plist.dict_add(key, "BundleID", key)
+        result += self.plist.dict_add(key, "BundleId", key)
+        result += self.plist.dict_add(key, "Executable", target)
+        result += self.plist.dict_add(key, "Registered", target)
+        result += self.plist.dict_add(key, "Hide", 0, "int")
+        # result += self.plist.dict_add(key, "Requirement", requirement)
+        result += self.plist.dict_add(key, "Whitelisted", "FALSE", "bool")
         if result:
-            raise RuntimeError("Failed to remove " + app.name + ".")
-        self.logger.info("Removed successfully.")
+            # There was an error.
+            raise RuntimeError("Failed to insert executable {}.".format(target))
+        self.logger.info("Inserted successfully.")
 
-    def disable(self, application):
-        '''Leave (or insert) an application into the Location Services plist,
-        but mark the application as being disallowed from utilizing Location
-        Services.
-
-        app - an application identifier
-        '''
-
-        # If no application is given, then we're modifying the global Location
-        # Services system.
-        if not application:
-            self.logger.info("Disabling service 'location' globally...")
-            enable_global(False, self.logger)
-            self.logger.info("Globally disabled successfully.")
-            return
-
-        app = AppInfo(application)
-
-        # Verboseness
-        self.logger.info("Disabling '" + app.bid + "' in service 'location'...")
-
-        # If the application isn't already in locationd, add it.
-        if not self.plist.read(app.bid):
-            self.insert(app.bid)
-
-        # Then deauthorize the application.
-        result = self.plist.dict_add(app.bid, "Authorized", "FALSE", "bool")
-        if result:
-            raise RuntimeError("Failed to disable " + app.name + ".")
-        self.logger.info("Disabled successfully.")
+    def __enter__(self):
+        """
+        Allows for the LSEdit object to be used in a 'with' clause.
+        """
+        return self
 
     def __exit__(self, type, value, traceback):
+        """
+        Allows for the LSEdit object to be used in a 'with' clause.
+        """
         # Make sure that the locationd launchd item is reactivated.
         self.__enable()
 
     def __enable(self):
+        """
+        Enables the locationd system.
+        """
         enable()
         self.logger.info("Enabled locationd system.")
 
     def __disable(self):
+        """
+        Disables the locationd system.
+        """
         disable()
-        self.logger.info(
-            "Disabled locationd system. (This is normal. DON'T PANIC.)")
+        self.logger.info("Disabled locationd system. (This is normal. DON'T PANIC.)")
 
-def enable_global(enable, logger=None):
-    '''Enables or disables the Location Services system globally.'''
-
-    if not logger:
-        logger = universal.NullOutput()
-
-    try:
-        value = int(enable)
-    except:
-        raise ValueError("'" + str(enable) + "' not a boolean.")
-
+def enable_global(enable, logger):
+    """
+    Enables or disables the Location Services system globally.
+    
+    :param enable: a boolean describing whether the LS system should be enabled
+    :param logger: a management_tools.loggers logger for recording output
+    """
+    # Get the Universally Unique Identifier for the hardware. This determines
+    # the location of the locationd system.
     uuid = get_uuid()
     ls_dir = '/var/db/locationd/Library/Preferences/ByHost/'
     ls_plist = ls_dir + 'com.apple.locationd.' + str(uuid) + '.plist'
     logger.info("Modifying global values in '" + ls_plist + "'.")
 
+    # Depending on settings, there may be a few possible files to use as the
+    # locationd plist.
     if not os.path.isfile(ls_plist):
         ls_plist = None
+        # Find everything starting with 'com.apple.locationd' and ending with
+        # the '.plist' extension.
         potentials = [
             x.lstrip('com.apple.locationd.').rstrip('.plist')
             for x in os.listdir(ls_dir)
@@ -191,22 +249,25 @@ def enable_global(enable, logger=None):
             and str(x).startswith('com.apple.locationd.')
         ]
         potentials = [x for x in potentials if not x.find('.') >= 0]
+        
+        # Must handle things differently depending on the number of results.
         if len(potentials) > 1:
+            # Out of all the matches, try to find the one that matches the UUID.
             for id in potentials:
                 if uuid == id or uuid.lower() == id or uuid.upper() == id:
-                    ls_plist = (
-                        ls_dir + 'com.apple.locationd.' + id + '.plist'
-                    )
+                    ls_plist = ('{}com.apple.locationd.{}.plist'.format(ls_dir, id))
                     break
+                
                 for part in uuid.split('-'):
                     if part == id or part.lower() == id or part.upper() == id:
-                        ls_plist = (
-                            ls_dir + 'com.apple.locationd.' + id + '.plist'
-                        )
+                        ls_plist = ('{}com.apple.locationd.{}.plist'.format(ls_dir, id))
                         break
+                
+                # If we've found it, break out of this loop.
                 if ls_plist:
                     break
         elif len(potentials) == 1:
+            # Only one result - that's easy!
             ls_plist = (
                 ls_dir + 'com.apple.locationd.' + potentials[0] + '.plist'
             )
@@ -215,17 +276,17 @@ def enable_global(enable, logger=None):
                 "No Location Services global property list found at '" +
                 ls_plist + "'.")
 
+    # Write the location services status (enabled or not).
     if ls_plist:
         ls_plist = PlistEditor(ls_plist)
         ls_plist.write("LocationServicesEnabled", value, "int")
     else:
-        raise RuntimeError(
-            "Could not locate Location Services plist file at '" +
-            ls_plist + "'.")
+        raise RuntimeError("Could not locate Location Services plist file at '{}.".format(ls_plist))
 
 def get_uuid():
-    '''Acquire the UUID of the hardware.'''
-
+    """
+    Acquire the Universally Unique Identifier of the hardware.
+    """
     ioreg = [
         '/usr/sbin/ioreg',
         '-rd1',
@@ -242,9 +303,10 @@ def get_uuid():
     return uuid[0].lstrip().rstrip('"').split('= "')[1]
 
 def enable():
-    '''Fix permissions for the _locationd user, then load the locationd
-    launchd item.'''
-
+    """
+    Fix permissions for the _locationd user, then load the locationd launchd
+    daemon item.
+    """
     chown = [
         '/usr/sbin/chown',
         '-R',
@@ -274,8 +336,9 @@ def enable():
     return output
 
 def disable():
-    '''Unload the locationd launchd item.'''
-
+    """
+    Unload the locationd launchd daemon item.
+    """
     launchctl = [
         '/bin/launchctl',
         'unload',
