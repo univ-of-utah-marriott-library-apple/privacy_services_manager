@@ -5,8 +5,8 @@ import universal
 try:
     from management_tools.app_info import AppInfo
 except ImportError as e:
-    print "You need the 'Management Tools' module to be installed first."
-    print "https://github.com/univ-of-utah-marriott-library-apple/management_tools"
+    print("You need version 1.6.0 or greater of the 'Management Tools' module to be installed first.")
+    print("https://github.com/univ-of-utah-marriott-library-apple/management_tools")
     raise e
 
 # The services have particular names and databases.
@@ -20,31 +20,29 @@ available_services = {
 }
 
 class TCCEdit(object):
-    '''A class to help with editing the TCC databases. This ought to be used
-    in a 'with' statement to ensure proper closing of connections! e.g.
-
-    with TCCEdit() as e:
-        # do some stuff to the database
-        e.foo()
-    # do more stuff to other things
-    bar(baz)
-    '''
-
+    """
+    Provides a class for modifying the Privacy Services permissions. This class
+    was designed to be used in a 'with' statement to ensure proper updating of
+    the locationd system. For example:
+    
+        with TCCEdit() as e:
+            # do some stuff to the database
+            e.foo()
+        # do more stuff
+        bar(baz)
+    """
     def __init__(
         self,
         service,
+        logger,
         user      = '',
         template  = False,
         lang      = 'English',
-        logger    = None,
         forceroot = False,
         admin     = False,
     ):
         # Set the logger for output.
-        if logger:
-            self.logger = logger
-        else:
-            self.logger = universal.NullOutput()
+        self.logger = logger
 
         # If a service is given, stick with that.
         self.service = service
@@ -53,6 +51,9 @@ class TCCEdit(object):
         if not user:
             import getpass
             user = getpass.getuser()
+        
+        # Set the administrative override flag.
+        self.admin = admin
 
         # Check the version of OS X before continuing; only Darwin versions 12
         # and above support the TCC database system.
@@ -71,14 +72,10 @@ class TCCEdit(object):
             # Apple, but only root may modify anything therein.
             if not os.geteuid() == 0:
                 raise ValueError("Only root user may modify the User Template.")
-            self.local_path = (
-                '/System/Library/User Template/' +
-                lang +
-                '.lproj/Library/Application Support/com.apple.TCC/TCC.db'
-            )
-            local_log_entry = (
-                "Set to modify local permissions for the '" + lang +
-                "' User Template at ")
+            self.local_path = ('/System/Library/User Template/{}.lproj/Library/Application Support/com.apple.TCC/TCC.db'.format(lang))
+            
+            # This is the beginning of the log entry. It'll be completed below.
+            local_log_entry = ("Set to modify local permissions for the '{}' User Template at ".format(lang))
         else:
             if (user == 'root' and
                 not forceroot and
@@ -107,34 +104,25 @@ command with the `--forceroot` option:
     privacy_services_manager.py --forceroot add contacts com.apple.Safari'''
                 raise ValueError(error)
             else:
-                self.local_path = os.path.expanduser(
-                    '~' +
-                    user +
-                    '/Library/Application Support/com.apple.TCC/TCC.db'
-                )
-                local_log_entry = (
-                    "Set to modify local permissions for user '" + user + "' at "
-                )
+                self.local_path = os.path.expanduser('~{}/Library/Application Support/com.apple.TCC/TCC.db'.format(user))
+                
+                # This is the beginning of the log entry. It'll be completed
+                # below.
+                local_log_entry = ("Set to modify local permissions for user '{}' at ".format(user))
 
         # Check the user didn't supply a bad username.
         if not self.local_path.startswith('/'):
             # The path to the home directory of 'user' couldn't be found by the
             # system. Maybe the user exists but isn't registered as a user?
             # Try looking in /Users/ just to see:
-            if os.path.isdir('/Users/' + user):
-                self.local_path = (
-                    '/Users/' +
-                    user +
-                    '/Library/Application Support/com.apple.TCC/TCC.db'
-                )
+            if os.path.isdir('/Users/{}'.format(user)):
+                self.local_path = ('/Users/{}/Library/Application Support/com.apple.TCC/TCC.db'.format(user))
             else:
                 raise ValueError("Invalid username supplied: " + user)
 
         self.logger.info(local_log_entry + "'" + self.local_path + "'.")
         self.root_path = '/Library/Application Support/com.apple.TCC/TCC.db'
-        self.logger.info(
-            "Set to modify global permissions for all users at '" +
-            self.root_path + "'.")
+        self.logger.info("Set to modify global permissions for all users at '{}'.".format(self.root_path))
 
         # Ensure the databases exist properly.
         if os.geteuid() == 0 and not os.path.exists(self.root_path):
@@ -146,10 +134,7 @@ command with the `--forceroot` option:
         # Check there is write access to user's local TCC database.
         if not os.access(self.local_path, os.W_OK):
             if (user == 'root' and forceroot) or user != 'root':
-                raise ValueError(
-                    "You do not have permission to modify " + user +
-                    "'s TCC database."
-                )
+                raise ValueError("You do not have permission to modify {}'s TCC database.".format(user))
 
         # Create the connections.
         # Only root may modify the global TCC database.
@@ -163,29 +148,24 @@ command with the `--forceroot` option:
             self.local = None
         self.connections = {'root': self.root, 'local': self.local}
 
-    def __enter__(self):
-        return self
-
-    def insert(self, app, service=None):
-        '''Adds 'app' to the specified service.
-
-        app     - an application identifier
-        service - a service name to add to
-        '''
-
-        # Validate that they didn't pass us something dumb.
-        if app is None:
+    def insert(self, target, service=None):
+        """
+        Enable the specified target for the given service.
+        
+        :param target: an application or file to modify permissions for
+        :param service: a service name to modify
+        """
+        # Validate that they didn't pass us something nonexistent.
+        if target is None:
             return
+        
+        # If not using admin override mode, look up a bundle identifier.
+        if not self.admin:
+            target = AppInfo(target).bid
         else:
-            # If the user has specified the `--admin` option, don't try to find
-            # an actual application. This allows the adding of *any* file to the
-            # database. Useful for some administration environments.
-            if self.admin:
-                bid = app
-            else:
-            # Otherwise, attempt to get the bundle identifier from the
-            # application.
-                bid = AppInfo(app).bid
+            target = os.path.abspath(target)
+        
+        # If the service was not specified, get the original.
         if service is None and self.service:
             service = self.service
         else:
@@ -197,15 +177,14 @@ command with the `--forceroot` option:
         # Check that the service is known to the program; I do not intend to
         # support unsupported services here.
         if not service in available_services.keys():
-            raise ValueError("Invalid service provided: " + service)
+            raise ValueError("Invalid service provided: {}".format(service))
 
         # Version checking for the current service.
         if self.version < available_services[service][2]:
-            raise RuntimeError(
-                "Service '" + service +
-                "' does not exist on this version of OS X.")
+            raise RuntimeError("Service '{}' does not exist on this version of OS X.".format(service))
 
-        self.logger.info("Inserting '" + bid + "' in service '" + service + "'...")
+        # Proceed.
+        self.logger.info("Inserting '{}' in service '{}'...".format(target, service))
 
         # Establish a connection with the TCC database.
         connection = self.connections[available_services[service][1]]
@@ -218,44 +197,37 @@ command with the `--forceroot` option:
         c = connection.cursor()
 
         # Add the entry!
-        # In OS X 10.9, Apple introduced a "blob". It doesn't seem to be very
-        # useful since you can just give it the value "NULL" with no ill
-        # effects, but it is necessary in Darwin versions 13 and greater (yet it
-        # cannot be given in previous versions without incurring errors).
-        values = (available_services[service][0], bid)
+        # In OS X 10.9 (Darwin 12), Apple introduced a "blob". It doesn't seem
+        # to be very useful since you can just give it the value "NULL" with no
+        # ill effects, but it is necessary in Darwin versions 13 and greater
+        # (yet it cannot be given in previous versions without raising errors).
+        values = (available_services[service][0], target)
         if self.version == 12:
-            c.execute(
-                'INSERT or REPLACE into access values(?, ?, 0, 1, 0)',
-                values
-            )
+            c.execute('INSERT or REPLACE into access values(?, ?, 0, 1, 0)', values)
         else:
-            c.execute(
-                'INSERT or REPLACE into access values(?, ?, 0, 1, 0, NULL)',
-                values
-            )
+            c.execute('INSERT or REPLACE into access values(?, ?, 0, 1, 0, NULL)', values)
         connection.commit()
 
         self.logger.info("Inserted successfully.")
 
-    def remove(self, app, service=None):
-        '''Removes 'app' from the specified service.
+    def remove(self, target, service=None):
+        """
+        Remove an item from Privacy Services for the given service.
 
-        app     - an application identifier
-        service - a service name to remove from
-        '''
-
-        if app is None:
+        :param target: an application or file to modify permissions for
+        :param service: a particular service to modify the permissions within
+        """
+        # Validate that they didn't pass us something nonexistent.
+        if target is None:
             return
+        
+        # If not using admin override mode, look up a bundle identifier.
+        if not self.admin:
+            target = AppInfo(target).bid
         else:
-            # If the user has specified the `--admin` option, don't try to find
-            # an actual application. This allows the adding of *any* file to the
-            # database. Useful for some administration environments.
-            if self.admin:
-                bid = app
-            else:
-            # Otherwise, attempt to get the bundle identifier from the
-            # application.
-                bid = AppInfo(app).bid
+            target = os.path.abspath(target)
+        
+        # If the service was not specified, get the original.
         if service is None and self.service:
             service = self.service
         else:
@@ -268,8 +240,7 @@ command with the `--forceroot` option:
         if not service in available_services.keys():
             raise ValueError("Invalid service provided: " + service)
 
-        self.logger.info(
-            "Removing '" + bid + "' from service '" + service + "'...")
+        self.logger.info("Removing '{}' from service '{}'...".format(target, service))
 
         # Establish a connection with the TCC database.
         connection = self.connections[available_services[service][1]]
@@ -281,33 +252,32 @@ command with the `--forceroot` option:
         c = connection.cursor()
 
         # Perform the deletion.
-        values = (available_services[service][0], bid)
-        c.execute('DELETE FROM access WHERE service IS ? AND client IS ?',
-                  values)
+        values = (available_services[service][0], target)
+        c.execute('DELETE FROM access WHERE service IS ? AND client IS ?', values)
         connection.commit()
 
         self.logger.info("Removed successfully.")
 
-    def disable(self, app, service=None):
-        '''Disables 'app' for the specified service, but leaves the entry in the
-        TCC database.
+    def disable(self, target, service=None):
+        """
+        Mark the application or file as being disallowed from utilizing Privacy
+        Services. If the target is not already in the database, it will be added
+        and then disabled.
 
-        app     - an application identifier
-        service - a service name to disable within
-        '''
-
-        if app is None:
+        :param target: an application or file to modify permissions for
+        :param service: the service to modify
+        """
+        # Validate that they didn't pass us something nonexistent.
+        if target is None:
             return
+        
+        # If not using admin override mode, look up a bundle identifier.
+        if not self.admin:
+            target = AppInfo(target).bid
         else:
-            # If the user has specified the `--admin` option, don't try to find
-            # an actual application. This allows the adding of *any* file to the
-            # database. Useful for some administration environments.
-            if self.admin:
-                bid = app
-            else:
-            # Otherwise, attempt to get the bundle identifier from the
-            # application.
-                bid = AppInfo(app).bid
+            target = os.path.abspath(target)
+        
+        # If the service was not specified, get the original.
         if service is None and self.service:
             service = self.service
         else:
@@ -318,10 +288,9 @@ command with the `--forceroot` option:
 
         # Check the service is recognized.
         if not service in available_services.keys():
-            raise ValueError("Invalid service provided: " + service)
+            raise ValueError("Invalid service provided: {}".format(service))
 
-        self.logger.info(
-            "Disabling '" + bid + "' in service '" + service + "'...")
+        self.logger.info("Disabling '{}' in service '{}'...".format(target, service))
 
         # Establish a connection with the TCC database.
         connection = self.connections[available_services[service][1]]
@@ -336,36 +305,27 @@ command with the `--forceroot` option:
         # The 'prompt_count' must be 1 or else the system will ask the user
         # anyway. This is the only time it seems to really matter.
         values = (available_services[service][0], bid)
-        c.execute(
-            'SELECT count(*) FROM access WHERE service IS ? and client IS ?',
-            values
-        )
+        c.execute('SELECT count(*) FROM access WHERE service IS ? and client IS ?', values)
         count = c.fetchone()[0]
         if count:
             if self.version == 12:
-                c.execute(
-                    'INSERT or REPLACE into access values(?, ?, 0, 0, 1)',
-                    values
-                )
+                c.execute('INSERT or REPLACE into access values(?, ?, 0, 0, 1)', values)
             else:
-                c.execute(
-                    'INSERT or REPLACE into access values(?, ?, 0, 0, 1, NULL)',
-                    values
-                )
+                c.execute('INSERT or REPLACE into access values(?, ?, 0, 0, 1, NULL)', values)
         connection.commit()
 
         self.logger.info("Disabled successfully.")
 
     def __create(self, path):
-        '''Creates a database in the event that it does not already exist. These
-        databases are formatted in a particular way. Don't change this!
+        """
+        Creates a fresh TCC database at the given path.
+        
+        These databases have a very particular format - don't change this!
+        
+        :param path: where to build the database
+        """
 
-        path - the path to the TCC database file to be created
-        '''
-
-        self.logger.info(
-            "TCC.db file was expected at '" + path +
-            "' but was not found. Creating new TCC.db file...")
+        self.logger.info("TCC.db file was expected at '{}' but was not found. Creating new TCC.db file...".format(path))
 
         # Make sure our directory tree exists.
         if not os.path.exists(os.path.dirname(path)):
@@ -427,13 +387,18 @@ command with the `--forceroot` option:
 
         self.logger.info("TCC.db file created successfully.")
 
+    def __enter__(self):
+        """
+        Allows for the TCCEdit object to be used in a 'with' clause.
+        """
+        return self
+
     def __exit__(self, type, value, traceback):
-        '''This handles the closing of connections when the object is closed.
-
-        If the object is put inside a with statement (as suggested above), this
-        will be called automatically when the 'with' is left.
-        '''
-
+        """
+        Allows for the TCCEdit object to be used in a 'with' clause.
+        
+        Properly closes all connections when the item is trashed.
+        """
         if self.root:
             self.root.close()
         if self.local:
