@@ -156,12 +156,14 @@ command with the `--forceroot` option:
         :param service: a service name to modify
         """
         # Validate that they didn't pass us something nonexistent.
-        if app is None:
+        if target is None:
             return
         
         # If not using admin override mode, look up a bundle identifier.
         if not self.admin:
             target = AppInfo(target).bid
+        else:
+            target = os.path.abspath(target)
         
         # If the service was not specified, get the original.
         if service is None and self.service:
@@ -216,12 +218,14 @@ command with the `--forceroot` option:
         :param service: a particular service to modify the permissions within
         """
         # Validate that they didn't pass us something nonexistent.
-        if app is None:
+        if target is None:
             return
         
         # If not using admin override mode, look up a bundle identifier.
         if not self.admin:
             target = AppInfo(target).bid
+        else:
+            target = os.path.abspath(target)
         
         # If the service was not specified, get the original.
         if service is None and self.service:
@@ -264,12 +268,14 @@ command with the `--forceroot` option:
         :param service: the service to modify
         """
         # Validate that they didn't pass us something nonexistent.
-        if app is None:
+        if target is None:
             return
         
         # If not using admin override mode, look up a bundle identifier.
         if not self.admin:
             target = AppInfo(target).bid
+        else:
+            target = os.path.abspath(target)
         
         # If the service was not specified, get the original.
         if service is None and self.service:
