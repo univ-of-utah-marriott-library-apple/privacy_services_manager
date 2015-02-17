@@ -25,6 +25,9 @@ class LSEdit(object):
     def __init__(self, logger, admin=False):
         # Set the logger for output.
         self.logger = logger
+    
+        # Set the administrative override flag.
+        self.admin = admin
 
         # Only root may modify the Location Services system.
         if os.geteuid() != 0:
@@ -175,10 +178,30 @@ class LSEdit(object):
         # Reformat the target name.
         key = 'com.apple.locationd.executable-{}'.format(target)
         
-        # Build the requirement string.
-        # I'm actually not sure how to get the cdhash, so for now this is
-        # commented out. It may not be necessary.
-        # requirement = ("cdhash H\"{cdhash}\"")
+        # Find the Code Directory Hash (CDHash).
+        # If the command exits with a non-zero exit status, report to the user.
+        # This generally indicates it does not have a code signature.
+        try:
+            codesign = subprocess.check_output(
+                ['/usr/bin/codesign', '--display', '--verbose=4', target],
+                stderr=subprocess.STDOUT
+            ).split('\n')
+        except subprocess.CalledProcessError:
+            self.logger.warn("Executable '{}' is not signed. Adding anyway...".format(target))
+            codesign = []
+        
+        # Filter the results.
+        codesign = [x for x in codesign if x is not None and x != '']
+        codesign = [x for x in codesign if '=' in x]
+        # After this, 'cdhash' will either be an empty list (no match), or else
+        # it should have one element with the cdhash in it.
+        cdhash = [x.split('=')[1] for x in codesign if 'CDHash' in x]
+        
+        # Build the requirement string from the cdhash if we have one.
+        if len(cdhash) == 1:
+            requirement = ("cdhash H\"{cdhash}\"".format(cdhash=cdhash[0]))
+        else:
+            requirement = None
         
         # Write the changes to the locationd plist.
         result = 0
@@ -188,7 +211,8 @@ class LSEdit(object):
         result += self.plist.dict_add(key, "Executable", target)
         result += self.plist.dict_add(key, "Registered", target)
         result += self.plist.dict_add(key, "Hide", 0, "int")
-        # result += self.plist.dict_add(key, "Requirement", requirement)
+        if requirement:
+            result += self.plist.dict_add(key, "Requirement", requirement)
         result += self.plist.dict_add(key, "Whitelisted", "FALSE", "bool")
         if result:
             # There was an error.
@@ -268,13 +292,9 @@ def enable_global(enable, logger):
                     break
         elif len(potentials) == 1:
             # Only one result - that's easy!
-            ls_plist = (
-                ls_dir + 'com.apple.locationd.' + potentials[0] + '.plist'
-            )
+            ls_plist = (ls_dir + 'com.apple.locationd.{}.plist'.format(potentials[0]))
         else:
-            raise RuntimeError(
-                "No Location Services global property list found at '" +
-                ls_plist + "'.")
+            raise RuntimeError("No Location Services global property list found at '{}'.".format(ls_plist))
 
     # Write the location services status (enabled or not).
     if ls_plist:

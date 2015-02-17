@@ -5,7 +5,7 @@ import tcc_services
 attributes = {
     'long_name': "Privacy Services Manager",
     'name':      "privacy_services_manager",
-    'version':   "1.6.1",
+    'version':   "1.6.2",
 }
 
 # This is a list of services which can be modified.
