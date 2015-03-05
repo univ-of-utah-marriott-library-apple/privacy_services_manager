@@ -95,7 +95,7 @@ There are four actions available:
 
 ### Services
 
-There are three* services that can be modified:
+There are five* services that can be modified:
 
 1. `contacts` handles requests to access a user's address book. Many web browsers use this to store login information for various websites. This service is handled on a per-user basis, so any user has the ability to modify this service for themselves.
 2. `accessibility` deals with behind-the-scenes systems that Apple believes require extra privileges to enable. Applications that interface with your computer experience, such as BetterSnapTool or the Steam in-game overlay, require access through this service. These privileges must be granted by a privileged user via `sudo`.

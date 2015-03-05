@@ -142,10 +142,7 @@ command with the `--forceroot` option:
             self.root = sqlite3.connect(self.root_path)
         else:
             self.root = None
-        if os.geteuid() != 0 or (os.geteuid() == 0 and forceroot):
-            self.local = sqlite3.connect(self.local_path)
-        else:
-            self.local = None
+        self.local = sqlite3.connect(self.local_path)
         self.connections = {'root': self.root, 'local': self.local}
 
     def insert(self, target, service=None):
@@ -192,7 +189,10 @@ command with the `--forceroot` option:
         # Clearly you tried to modify something you weren't supposed to!
         # For shame.
         if not connection:
-            raise ValueError("Must be root to modify '" + service + "'")
+            if os.geteuid() != 0:
+                raise ValueError("Must be root to modify '{}'".format(service))
+            else:
+                raise ValueError("Unable to connect to '{}'".format(service))
 
         c = connection.cursor()
 
