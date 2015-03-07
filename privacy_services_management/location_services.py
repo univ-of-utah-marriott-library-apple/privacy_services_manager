@@ -299,6 +299,7 @@ def enable_global(enable, logger):
     # Write the location services status (enabled or not).
     if ls_plist:
         ls_plist = PlistEditor(ls_plist)
+        value = 1 if enable else 0
         ls_plist.write("LocationServicesEnabled", value, "int")
     else:
         raise RuntimeError("Could not locate Location Services plist file at '{}.".format(ls_plist))
