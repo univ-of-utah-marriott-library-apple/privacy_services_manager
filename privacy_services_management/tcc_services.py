@@ -304,7 +304,7 @@ command with the `--forceroot` option:
         # Disable the application for the given service.
         # The 'prompt_count' must be 1 or else the system will ask the user
         # anyway. This is the only time it seems to really matter.
-        values = (available_services[service][0], bid)
+        values = (available_services[service][0], target)
         c.execute('SELECT count(*) FROM access WHERE service IS ? and client IS ?', values)
         count = c.fetchone()[0]
         if count:

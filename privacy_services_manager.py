@@ -222,19 +222,50 @@ if __name__ == '__main__':
         log  = not args.no_log,
         path = args.log_dest
     )
+
+    apps      = args.apps if args.apps else []
+    service   = args.service
+    action    = args.action
+    user      = args.user
+    template  = args.template
+    language  = args.language
+        
+    # Output some information.
+    output = (
+        "{bar}\n"
+        "{version}\n"
+        "    service:  {service}\n"
+        "    action:   {action}\n"
+        "    app(s):   {apps}\n"
+        "    user:     {user}\n"
+        "    template: {template}\n"
+        "    language: {language}\n"
+    ).format(
+        bar      = '#' * 80,
+        version  = version(),
+        service  = service,
+        action   = action,
+        apps     = apps,
+        user     = user if user else "N/A",
+        template = template,
+        language = language if template else "N/A"
+    )
     
     # Perform checks for necessary bits of information.
     if not args.action:
         print("Error: Must specify an action.")
+        logger.error(output)
         sys.exit(1)
     if not args.service:
         print("Error: Must specify a service to modify.")
+        logger.error(output)
         sys.exit(1)
     if args.admin:
         logger.warn("Administrative override enabled. Be careful!")
         
     # Run the program!
     try:
+        logger.info(output)
         main(
             apps      = args.apps if args.apps else [],
             service   = args.service,
