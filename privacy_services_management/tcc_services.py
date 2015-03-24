@@ -77,17 +77,16 @@ class TCCEdit(object):
             # This is the beginning of the log entry. It'll be completed below.
             local_log_entry = ("Set to modify local permissions for the '{}' User Template at ".format(lang))
         else:
-            if (user == 'root' and
-                not forceroot and
-                available_services[service][1] != 'root'):
-                # Prevent the root user from creating or modifying their own
-                # local TCC database. This is to prevent confusion. The file
-                # can be forced to be used by the `--forceroot` option.
-                #
-                # If the service being modified is root-level, don't bother
-                # checking for the local TCC database file because it is
-                # irrelevant.
-                error = '''\
+            if user == 'root' and not forceroot:
+                if available_services[service][1] != 'root':
+                    # Prevent the root user from creating or modifying their own
+                    # local TCC database. This is to prevent confusion. The file
+                    # can be forced to be used by the `--forceroot` option.
+                    #
+                    # If the service being modified is root-level, don't bother
+                    # checking for the local TCC database file because it is
+                    # irrelevant.
+                    error = '''\
 Will not create a TCC database file for root.
 
 Creating a TCC database for the root user is generally not helpful, and
@@ -102,7 +101,9 @@ If you really want to create a TCC database file for root, run the
 command with the `--forceroot` option:
 
     privacy_services_manager.py --forceroot add contacts com.apple.Safari'''
-                raise ValueError(error)
+                    raise ValueError(error)
+                else:
+                    self.local_path = None
             else:
                 self.local_path = os.path.expanduser('~{}/Library/Application Support/com.apple.TCC/TCC.db'.format(user))
                 
@@ -111,7 +112,7 @@ command with the `--forceroot` option:
                 local_log_entry = ("Set to modify local permissions for user '{}' at ".format(user))
 
         # Check the user didn't supply a bad username.
-        if not self.local_path.startswith('/'):
+        if self.local_path and not self.local_path.startswith('/'):
             # The path to the home directory of 'user' couldn't be found by the
             # system. Maybe the user exists but isn't registered as a user?
             # Try looking in /Users/ just to see:
@@ -120,19 +121,20 @@ command with the `--forceroot` option:
             else:
                 raise ValueError("Invalid username supplied: " + user)
 
-        self.logger.info(local_log_entry + "'" + self.local_path + "'.")
+        if self.local_path:
+            self.logger.info(local_log_entry + "'" + self.local_path + "'.")
         self.root_path = '/Library/Application Support/com.apple.TCC/TCC.db'
         self.logger.info("Set to modify global permissions for all users at '{}'.".format(self.root_path))
 
         # Ensure the databases exist properly.
         if os.geteuid() == 0 and not os.path.exists(self.root_path):
             self.__create(self.root_path)
-        if not os.path.exists(self.local_path):
+        if self.local_path and not os.path.exists(self.local_path):
             if (user == 'root' and forceroot) or user != 'root':
                 self.__create(self.local_path)
 
         # Check there is write access to user's local TCC database.
-        if not os.access(self.local_path, os.W_OK):
+        if self.local_path and not os.access(self.local_path, os.W_OK):
             if (user == 'root' and forceroot) or user != 'root':
                 raise ValueError("You do not have permission to modify {}'s TCC database.".format(user))
 
@@ -142,7 +144,10 @@ command with the `--forceroot` option:
             self.root = sqlite3.connect(self.root_path)
         else:
             self.root = None
-        self.local = sqlite3.connect(self.local_path)
+        if self.local_path:
+            self.local = sqlite3.connect(self.local_path)
+        else:
+            self.local = None
         self.connections = {'root': self.root, 'local': self.local}
 
     def insert(self, target, service=None):
