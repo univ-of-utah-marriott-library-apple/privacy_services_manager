@@ -241,20 +241,24 @@ This section of the script is essentially an interface to the `defaults` command
 
 ## Update History
 
-This is a reverse-chronological list of updates to this project.
+This is a reverse-chronological list of updates to this project. Any seemingly missing updates from this list are considered extremely minor (likely only a few words changed).
 
-| Date | Version | Update |
-|------|:-------:|--------|
-| 2015-02-12 | 1.6.0 | Proper `--admin` update. Should support both TCC services and Location services for non-bundled applications. |
-| 2015-01-22 | 1.5.1 | Now allows use of `--admin` to modify TCC services for non-bundled applications. |
-| 2014-09-19 | 1.5.0 | Updated to include the `calendar` and `reminders` services. Updated documentation to reflect these changes. |
-| 2014-09-11 | 1.4.0 | Finished verbosity updates. Now very informational. Bugfixes to address Yosemite issue. |
-| 2014-09-05 | 1.3.1 | First update for increased verbosity of console output and file logging. Easier to see what exactly is going on. |
-| 2014-08-14 | 1.3.0 | Yosemite Update. Now (mostly) functional on OS X 10.10 "Yosemite". Some issues with global location services toggling. |
-| 2014-07-16 | 1.2.4 | Bug fix: usage of name `bid` in code undefined. |
-| 2014-06-26 | 1.2.3 | New packaging format: .pkg files distributed in .dmg. |
-| 2014-06-25 | 1.2.3 | Bug fix: more robust ability to find location services plist files. Also updated documentation. |
-| 2014-06-24 | 1.1 | The script now comes in an easy-to-use package installer. Help documentation updated. |
-| 2014-06-20 | 1.0 | Ability to 'disable' applications added. Usage information (`--help`) and documentation updated. |
-| 2014-06-19 | 0.7 | After rewriting the TCC database and Location Services modules, editor classes were created for simpler integration. |
-| Pre-2014-06-18 | 0.1 | Decision made to combine *TCC Database Manager* and *Location Services Manager* projects. |
+| Date       | Version | Update                                                                                                                 |
+|------------|:-------:|------------------------------------------------------------------------------------------------------------------------|
+| 2015-02-12 | 1.6.0   | Proper `--admin` update. Should support both TCC services and Location services for non-bundled applications.          |
+| 2015-01-22 | 1.5.1   | Now allows use of `--admin` to modify TCC services for non-bundled applications.                                       |
+| 2014-09-19 | 1.5.0   | Updated to include the `calendar` and `reminders` services. Updated documentation to reflect these changes.            |
+| 2014-09-11 | 1.4.0   | Finished verbosity updates. Now very informational. Bugfixes to address Yosemite issue.                                |
+| 2014-09-05 | 1.3.1   | First update for increased verbosity of console output and file logging. Easier to see what exactly is going on.       |
+| 2014-08-14 | 1.3.0   | Yosemite Update. Now (mostly) functional on OS X 10.10 "Yosemite". Some issues with global location services toggling. |
+| 2014-07-16 | 1.2.4   | Bug fix: usage of name `bid` in code undefined.                                                                        |
+| 2014-06-26 | 1.2.3   | New packaging format: .pkg files distributed in .dmg.                                                                  |
+| 2014-06-25 | 1.2.3   | Bug fix: more robust ability to find location services plist files. Also updated documentation.                        |
+| 2014-06-25 | 1.2.2   | Increased verbosity via logging.                                                                                       |
+| 2014-06-25 | 1.2.1   | Further improvement of testing for Location Services plist.                                                            |
+| 2014-06-25 | 1.2.0   | Much more robust testing for the Location Services plist file.                                                         |
+| 2014-06-24 | 1.1     | The script now comes in an easy-to-use package installer. Help documentation updated.                                  |
+| 2014-06-20 | 1.0     | Usage information (`--help`) and documentation updated.                                                                |
+| 2014-05-20 | 0.8     | Added ability to disable applications in the services.                                                                 |
+| 2014-06-19 | 0.7     | After rewriting the TCC database and Location Services modules, editor classes were created for simpler integration.   |
+| Pre-2014-06-18 | 0.1 | Decision made to combine *TCC Database Manager* and *Location Services Manager* projects.                              |
