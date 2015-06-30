@@ -316,7 +316,7 @@ command with the `--forceroot` option:
         # The 'prompt_count' must be 1 or else the system will ask the user
         # anyway. This is the only time it seems to really matter.
         values = (available_services[service][0], target, client_type)
-        c.execute('SELECT count(*) FROM access WHERE service IS ? and client IS ?', values)
+        c.execute('SELECT count(*) FROM access WHERE service IS ? and client IS ?', values[0:2])
         count = c.fetchone()[0]
         if count:
             if self.version == 12:
