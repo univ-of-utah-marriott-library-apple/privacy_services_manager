@@ -162,10 +162,13 @@ command with the `--forceroot` option:
             return
         
         # If not using admin override mode, look up a bundle identifier.
+        client_type = 0
         if not self.admin:
             target = AppInfo(target).bid
         else:
             target = os.path.abspath(target)
+            # We'll treat this as a command line executable.
+            client_type = 1
         
         # If the service was not specified, get the original.
         if service is None and self.service:
@@ -206,11 +209,11 @@ command with the `--forceroot` option:
         # to be very useful since you can just give it the value "NULL" with no
         # ill effects, but it is necessary in Darwin versions 13 and greater
         # (yet it cannot be given in previous versions without raising errors).
-        values = (available_services[service][0], target)
+        values = (available_services[service][0], target, client_type)
         if self.version == 12:
-            c.execute('INSERT or REPLACE into access values(?, ?, 0, 1, 0)', values)
+            c.execute('INSERT or REPLACE into access values(?, ?, ?, 1, 0)', values)
         else:
-            c.execute('INSERT or REPLACE into access values(?, ?, 0, 1, 0, NULL)', values)
+            c.execute('INSERT or REPLACE into access values(?, ?, ?, 1, 0, NULL)', values)
         connection.commit()
 
         self.logger.info("Inserted successfully.")
@@ -277,10 +280,13 @@ command with the `--forceroot` option:
             return
         
         # If not using admin override mode, look up a bundle identifier.
+        client_type = 0
         if not self.admin:
             target = AppInfo(target).bid
         else:
             target = os.path.abspath(target)
+            # We'll treat this as a command line executable.
+            client_type = 1
         
         # If the service was not specified, get the original.
         if service is None and self.service:
@@ -309,14 +315,14 @@ command with the `--forceroot` option:
         # Disable the application for the given service.
         # The 'prompt_count' must be 1 or else the system will ask the user
         # anyway. This is the only time it seems to really matter.
-        values = (available_services[service][0], target)
+        values = (available_services[service][0], target, client_type)
         c.execute('SELECT count(*) FROM access WHERE service IS ? and client IS ?', values)
         count = c.fetchone()[0]
         if count:
             if self.version == 12:
-                c.execute('INSERT or REPLACE into access values(?, ?, 0, 0, 1)', values)
+                c.execute('INSERT or REPLACE into access values(?, ?, ?, 0, 1)', values)
             else:
-                c.execute('INSERT or REPLACE into access values(?, ?, 0, 0, 1, NULL)', values)
+                c.execute('INSERT or REPLACE into access values(?, ?, ?, 0, 1, NULL)', values)
         connection.commit()
 
         self.logger.info("Disabled successfully.")
