@@ -245,6 +245,7 @@ This is a reverse-chronological list of updates to this project. Any seemingly m
 
 | Date       | Version | Update                                                                                                                 |
 |------------|:-------:|------------------------------------------------------------------------------------------------------------------------|
+| 2015-06-30 | 1.6.7   | Fixed the `--admin` option so it can add command line utilities correctly.                                             |
 | 2015-02-12 | 1.6.0   | Proper `--admin` update. Should support both TCC services and Location services for non-bundled applications.          |
 | 2015-01-22 | 1.5.1   | Now allows use of `--admin` to modify TCC services for non-bundled applications.                                       |
 | 2014-09-19 | 1.5.0   | Updated to include the `calendar` and `reminders` services. Updated documentation to reflect these changes.            |
