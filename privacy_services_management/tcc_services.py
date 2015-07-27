@@ -366,7 +366,7 @@ command with the `--forceroot` option:
             "allowed INTEGER NOT NULL, "
             "prompt_count INTEGER NOT NULL, "
         )
-        if 15 > self.version > 12:
+        if self.version > 12:
             access_table += "csreq BLOB, "
         if self.version >= 15:
             access_table += (
