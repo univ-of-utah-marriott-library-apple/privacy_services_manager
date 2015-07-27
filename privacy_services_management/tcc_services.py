@@ -374,7 +374,7 @@ command with the `--forceroot` option:
                 "PRIMARY KEY (service, client, client_type), "
                 "FOREIGN KEY (policy_id) REFERENCES policies(id) "
                 "ON DELETE CASCADE "
-                "ON UPDATE CASCADE"
+                "ON UPDATE CASCADE)"
             )
         else:
             access_table += "CONSTRAINT key PRIMARY KEY (service, client, client_type))"
