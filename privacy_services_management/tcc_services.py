@@ -366,7 +366,7 @@ command with the `--forceroot` option:
             "allowed INTEGER NOT NULL, "
             "prompt_count INTEGER NOT NULL, "
         )
-        if 15 > self.version > 12:
+        if self.version > 12:
             access_table += "csreq BLOB, "
         if self.version >= 15:
             access_table += (
@@ -374,7 +374,7 @@ command with the `--forceroot` option:
                 "PRIMARY KEY (service, client, client_type), "
                 "FOREIGN KEY (policy_id) REFERENCES policies(id) "
                 "ON DELETE CASCADE "
-                "ON UPDATE CASCADE"
+                "ON UPDATE CASCADE)"
             )
         else:
             access_table += "CONSTRAINT key PRIMARY KEY (service, client, client_type))"
