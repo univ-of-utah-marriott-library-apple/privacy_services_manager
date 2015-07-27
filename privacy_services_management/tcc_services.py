@@ -205,15 +205,16 @@ command with the `--forceroot` option:
         c = connection.cursor()
 
         # Add the entry!
-        # In OS X 10.9 (Darwin 12), Apple introduced a "blob". It doesn't seem
-        # to be very useful since you can just give it the value "NULL" with no
-        # ill effects, but it is necessary in Darwin versions 13 and greater
-        # (yet it cannot be given in previous versions without raising errors).
+        # Prior to OS X 10.8 (Darwin 12) there was no TCC database.
+        # In OS X 10.9 (Darwin 13) Apple added a 'csreq' field.
+        # In OS X 10.11 (Darwin 15) Apple added a 'policy_id' field.
         values = (available_services[service][0], target, client_type)
         if self.version == 12:
             c.execute('INSERT or REPLACE into access values(?, ?, ?, 1, 0)', values)
-        else:
+        elif 15 > self.version > 12:
             c.execute('INSERT or REPLACE into access values(?, ?, ?, 1, 0, NULL)', values)
+        elif self.version >= 15:
+            c.execute('INSERT or REPLACE into access values(?, ?, ?, 1, 0, NULL, NULL)', values)
         connection.commit()
 
         self.logger.info("Inserted successfully.")
@@ -321,8 +322,10 @@ command with the `--forceroot` option:
         if count:
             if self.version == 12:
                 c.execute('INSERT or REPLACE into access values(?, ?, ?, 0, 1)', values)
-            else:
+            elif 15 > self.version > 12:
                 c.execute('INSERT or REPLACE into access values(?, ?, ?, 0, 1, NULL)', values)
+            elif self.version >= 15:
+                c.execute('INSERT or REPLACE into access values(?, ?, ?, 0, 1, NULL, NULL)', values)
         connection.commit()
 
         self.logger.info("Disabled successfully.")
@@ -347,51 +350,70 @@ command with the `--forceroot` option:
         c = connection.cursor()
 
         # Create the tables.
-        c.execute('''
-                CREATE TABLE admin
-                (key TEXT PRIMARY KEY NOT NULL, value INTEGER NOT NULL)'''
-        )
+        c.execute("CREATE TABLE admin (key TEXT PRIMARY KEY NOT NULL, value INTEGER NOT NULL)")
 
-        c.execute('''
-                INSERT INTO admin VALUES ('version', 7)'''
-        )
-
-        # In OS X 10.9, Apple changed the formatting for this table a bit.
-        if self.version == 12:
-            c.execute('''
-                CREATE TABLE access
-                (service TEXT NOT NULL,
-                client TEXT NOT NULL,
-                client_type INTEGER NOT NULL,
-                allowed INTEGER NOT NULL,
-                prompt_count INTEGER NOT NULL,
-                CONSTRAINT key PRIMARY KEY (service, client, client_type))'''
-            )
-
+        if self.version < 15:
+            c.execute("INSERT INTO admin VALUES ('version', 7)")
         else:
-            c.execute('''
-                CREATE TABLE access
-                (service TEXT NOT NULL,
-                client TEXT NOT NULL,
-                client_type INTEGER NOT NULL,
-                allowed INTEGER NOT NULL,
-                prompt_count INTEGER NOT NULL,
-                csreq BLOB,
-                CONSTRAINT key PRIMARY KEY (service, client, client_type))'''
-            )
+            c.execute("INSERT INTO admin VALUES ('version', 8)")
 
-        c.execute('''
-                CREATE TABLE access_times
-                (service TEXT NOT NULL,
-                client TEXT NOT NULL,
-                client_type INTEGER NOT NULL,
-                last_used_time INTEGER NOT NULL,
-                CONSTRAINT key PRIMARY KEY (service, client, client_type))'''
+        # This table's formatting is version-sensitive.
+        access_table = (
+            "CREATE TABLE access "
+            "(service TEXT NOT NULL, "
+            "client TEXT NOT NULL, "
+            "client_type INTEGER NOT NULL, "
+            "allowed INTEGER NOT NULL, "
+            "prompt_count INTEGER NOT NULL, "
         )
-        c.execute('''
-                CREATE TABLE access_overrides
-                (service TEXT PRIMARY KEY NOT NULL)'''
+        if 15 > self.version > 12:
+            access_table += "csreq BLOB, "
+        if self.version >= 15:
+            access_table += (
+                "policy_id INTEGER, "
+                "PRIMARY KEY (service, client, client_type), "
+                "FOREIGN KEY (policy_id) REFERENCES policies(id) "
+                "ON DELETE CASCADE "
+                "ON UPDATE CASCADE"
+            )
+        else:
+            access_table += "CONSTRAINT key PRIMARY KEY (service, client, client_type))"
+        c.execute(access_table)
+
+        c.execute(
+                "CREATE TABLE access_times "
+                "(service TEXT NOT NULL, "
+                "client TEXT NOT NULL, "
+                "client_type INTEGER NOT NULL, "
+                "last_used_time INTEGER NOT NULL, "
+                "CONSTRAINT key PRIMARY KEY (service, client, client_type))"
         )
+        c.execute(
+                "CREATE TABLE access_overrides "
+                "(service TEXT PRIMARY KEY NOT NULL)"
+        )
+        
+        if self.version >= 15:
+            # There are some extra tables to add.
+            c.execute(
+                "CREATE TABLE policies "
+                "(id INTEGER NOT NULL PRIMARY KEY, "
+                "bundle_id TEXT NOT NULL, "
+                "uuid TEXT NOT NULL, "
+                "display TEXT NOT NULL, "
+                "UNIQUE (bundle_id, uuid))"
+            )
+            c.execute(
+                "CREATE TABLE active_policy "
+                "(client TEXT NOT NULL, "
+                "client_type INTEGER NOT NULL, "
+                "policy_id INTEGER NOT NULL, "
+                "PRIMARY KEY (client, client_type), "
+                "FOREIGN KEY (policy_id) REFERENCES policies(id) "
+                "ON DELETE CASCADE "
+                "ON UPDATE CASCADE)"
+            )
+            c.execute("CREATE INDEX active_policy_id ON active_policy(policy_id)")
 
         connection.commit()
         connection.close()
