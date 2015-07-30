@@ -33,9 +33,9 @@ If you have any comments, questions, or other input, either [file an issue](../.
 * Python 2.7.x (which you can download [here](https://www.python.org/download/))
 * [Management Tools](https://github.com/univ-of-utah-marriott-library-apple/management_tools) - version 1.6.0 or greater
 
-### OS X 10.10 "Yosemite" Notes
+### OS X 10.11 "El Capitan" Notes
 
-OS X Yosemite is now fully supported (from Developer Preview 7 onward). If you find any irregularites or anomalies, please [contact us](#contact). Thank you!
+OS X El Capitan is now fully supported (from Developer Preview 4 onward). If you find any irregularites or anomalies, please [contact us](#contact). Thank you!
 
 ## Install
 
@@ -245,6 +245,8 @@ This is a reverse-chronological list of updates to this project. Any seemingly m
 
 | Date       | Version | Update                                                                                                                 |
 |------------|:-------:|------------------------------------------------------------------------------------------------------------------------|
+| 2015-07-27 | 1.6.8   | Implemented support for El Capitan to resolve #27.                                                                     |
+| 2015-06-30 | 1.6.7   | Fixed the `--admin` option so it can add command line utilities correctly.                                             |
 | 2015-02-12 | 1.6.0   | Proper `--admin` update. Should support both TCC services and Location services for non-bundled applications.          |
 | 2015-01-22 | 1.5.1   | Now allows use of `--admin` to modify TCC services for non-bundled applications.                                       |
 | 2014-09-19 | 1.5.0   | Updated to include the `calendar` and `reminders` services. Updated documentation to reflect these changes.            |
