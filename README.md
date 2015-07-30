@@ -245,6 +245,7 @@ This is a reverse-chronological list of updates to this project. Any seemingly m
 
 | Date       | Version | Update                                                                                                                 |
 |------------|:-------:|------------------------------------------------------------------------------------------------------------------------|
+| 2015-07-30 | 1.6.9   | Adjusted `--admin` implementation so bundled applications will still resolve correctly even if `--admin` is given.     |
 | 2015-07-27 | 1.6.8   | Implemented support for El Capitan to resolve #27.                                                                     |
 | 2015-06-30 | 1.6.7   | Fixed the `--admin` option so it can add command line utilities correctly.                                             |
 | 2015-02-12 | 1.6.0   | Proper `--admin` update. Should support both TCC services and Location services for non-bundled applications.          |
