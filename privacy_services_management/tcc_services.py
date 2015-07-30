@@ -163,12 +163,15 @@ command with the `--forceroot` option:
         
         # If not using admin override mode, look up a bundle identifier.
         client_type = 0
-        if not self.admin:
+        try:
             target = AppInfo(target).bid
-        else:
-            target = os.path.abspath(target)
-            # We'll treat this as a command line executable.
-            client_type = 1
+        except ValueError:
+            if self.admin:
+                target = os.path.abspah(target)
+                # We'll treat this as a command line executable.
+                client_type = 1
+            else:
+                raise
         
         # If the service was not specified, get the original.
         if service is None and self.service:
@@ -282,12 +285,15 @@ command with the `--forceroot` option:
         
         # If not using admin override mode, look up a bundle identifier.
         client_type = 0
-        if not self.admin:
+        try:
             target = AppInfo(target).bid
-        else:
-            target = os.path.abspath(target)
-            # We'll treat this as a command line executable.
-            client_type = 1
+        except ValueError:
+            if self.admin:
+                target = os.path.abspah(target)
+                # We'll treat this as a command line executable.
+                client_type = 1
+            else:
+                raise
         
         # If the service was not specified, get the original.
         if service is None and self.service:
