@@ -51,6 +51,7 @@ class TCCEdit(object):
         if not user:
             import getpass
             user = getpass.getuser()
+        self.user = user
         
         # Set the administrative override flag.
         self.admin = admin
@@ -77,7 +78,7 @@ class TCCEdit(object):
             # This is the beginning of the log entry. It'll be completed below.
             local_log_entry = ("Set to modify local permissions for the '{}' User Template at ".format(lang))
         else:
-            if user == 'root' and not forceroot:
+            if self.user == 'root' and not forceroot:
                 if available_services[service][1] != 'root':
                     # Prevent the root user from creating or modifying their own
                     # local TCC database. This is to prevent confusion. The file
@@ -105,21 +106,21 @@ command with the `--forceroot` option:
                 else:
                     self.local_path = None
             else:
-                self.local_path = os.path.expanduser('~{}/Library/Application Support/com.apple.TCC/TCC.db'.format(user))
+                self.local_path = os.path.expanduser('~{}/Library/Application Support/com.apple.TCC/TCC.db'.format(self.user))
                 
                 # This is the beginning of the log entry. It'll be completed
                 # below.
-                local_log_entry = ("Set to modify local permissions for user '{}' at ".format(user))
+                local_log_entry = ("Set to modify local permissions for user '{}' at ".format(self.user))
 
         # Check the user didn't supply a bad username.
         if self.local_path and not self.local_path.startswith('/'):
             # The path to the home directory of 'user' couldn't be found by the
             # system. Maybe the user exists but isn't registered as a user?
             # Try looking in /Users/ just to see:
-            if os.path.isdir('/Users/{}'.format(user)):
-                self.local_path = ('/Users/{}/Library/Application Support/com.apple.TCC/TCC.db'.format(user))
+            if os.path.isdir('/Users/{}'.format(self.user)):
+                self.local_path = ('/Users/{}/Library/Application Support/com.apple.TCC/TCC.db'.format(self.user))
             else:
-                raise ValueError("Invalid username supplied: " + user)
+                raise ValueError("Invalid username supplied: {}".format(self.user))
 
         if self.local_path:
             self.logger.info(local_log_entry + "'" + self.local_path + "'.")
@@ -130,13 +131,13 @@ command with the `--forceroot` option:
         if os.geteuid() == 0 and not os.path.exists(self.root_path):
             self.__create(self.root_path)
         if self.local_path and not os.path.exists(self.local_path):
-            if (user == 'root' and forceroot) or user != 'root':
+            if (self.user == 'root' and forceroot) or self.user != 'root':
                 self.__create(self.local_path)
 
         # Check there is write access to user's local TCC database.
         if self.local_path and not os.access(self.local_path, os.W_OK):
-            if (user == 'root' and forceroot) or user != 'root':
-                raise ValueError("You do not have permission to modify {}'s TCC database.".format(user))
+            if (self.user == 'root' and forceroot) or self.user != 'root':
+                raise ValueError("You do not have permission to modify {}'s TCC database.".format(self.user))
 
         # Create the connections.
         # Only root may modify the global TCC database.
@@ -347,12 +348,23 @@ command with the `--forceroot` option:
         
         :param path: where to build the database
         """
+        # We need the user's ID and group ID to re-own the directory.
+        from pwd import getpwnam
+        uid = getpwnam(self.user).pw_uid
+        gid = getpwnam(self.user).pw_gid
 
         self.logger.info("TCC.db file was expected at '{}' but was not found. Creating new TCC.db file...".format(path))
 
         # Make sure our directory tree exists.
+        local_created = False
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path), int('700', 8))
+            # If the user isn't root and we're adjusting their local database,
+            # we'll fix some permissions.
+            if self.user != 'root' and path == self.local_path:
+                local_created = True
+                database_dir = os.path.dirname(self.local_path)
+                os.chown(database_dir, uid, gid)
 
         # Form an SQL connection with the file.
         connection = sqlite3.connect(path)
@@ -428,6 +440,10 @@ command with the `--forceroot` option:
         connection.close()
 
         self.logger.info("TCC.db file created successfully.")
+        
+        # The local database was created, so make sure permissions are set.
+        if local_created:
+            os.chown(self.local_path, uid, gid)
 
     def __enter__(self):
         """
