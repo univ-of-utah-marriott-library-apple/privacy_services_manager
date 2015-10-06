@@ -13,7 +13,7 @@ except ImportError as e:
     print("https://github.com/univ-of-utah-marriott-library-apple/management_tools")
     raise e
 
-def main(apps, service, action, user, template, language, logger, forceroot, admin):
+def main(apps, service, action, user, template, language, logger, forceroot, no_check, no_check_type):
     # Output some information.
     output = '#' * 80 + '\n' + version() + '''
     service:  {service}
@@ -42,13 +42,14 @@ def main(apps, service, action, user, template, language, logger, forceroot, adm
     if len(apps) == 0:
         apps.append(None)
     with psm.universal.get_editor(
-        service   = service,
-        logger    = logger,
-        user      = user,
-        template  = template,
-        lang      = language,
-        forceroot = forceroot,
-        admin     = admin
+        service         = service,
+        logger          = logger,
+        user            = user,
+        template        = template,
+        lang            = language,
+        forceroot       = forceroot,
+        no_check        = no_check,
+        no_check_type   = no_check_type,
     ) as e:
         if action == 'add' or action == 'enable':
             for app in apps:
@@ -103,10 +104,14 @@ Accessibility, Calendars, Reminders, and Locations.
     --forceroot
         Force the script to allow the creation or modification of the root
         user's own TCC database file.
-    --admin
+    --no-check-app, --no-check-bin
         Enables administrative override, which allows you to modify services
         for non-bundled applications (such as binary programs used from the
-        command line).
+        command line) or applications which maybe don't exist at execution time
+        (useful for sysadmins looking to prematurely grant permissions to apps
+        which are not yet installed on the system).
+            Use `--no-check-app` for applications, and `--no-check-bin` for
+        binaries. (This distinction is actually very important.)
 
     -l log, --log-dest log
         Redirect log output to 'log'.
@@ -195,7 +200,9 @@ if __name__ == '__main__':
     parser.add_argument('--template', action='store_true')
     parser.add_argument('--language', default='English')
     parser.add_argument('--forceroot', action='store_true')
-    parser.add_argument('--admin', action='store_true')
+    parser.add_argument('--no-check-app', action='store_true')
+    parser.add_argument('--no-check-bin', action='store_true')
+    parser.add_argument('--admin', action='store_true', dest='no_check_bin')
     parser.add_argument('action', nargs='?',
                         choices=['add', 'remove', 'enable', 'disable'],
                         default=None)
@@ -229,6 +236,17 @@ if __name__ == '__main__':
     user      = args.user
     template  = args.template
     language  = args.language
+    
+    if args.no_check_app and args.no_check_bin:
+        parser.error("Cannot give both --no-check-app and --no-check-bin.")
+    
+    no_check_type = None
+    if args.no_check_app:
+        no_check = True
+        no_check_type = 'app'
+    if args.no_check_bin:
+        no_check = True
+        no_check_type = 'bin'
         
     # Output some information.
     output = (
@@ -260,22 +278,23 @@ if __name__ == '__main__':
         print("Error: Must specify a service to modify.")
         logger.error(output)
         sys.exit(1)
-    if args.admin:
+    if args.no_check_bin or args.no_check_app:
         logger.warn("Administrative override enabled. Be careful!")
         
     # Run the program!
     try:
         logger.info(output)
         main(
-            apps      = args.apps if args.apps else [],
-            service   = args.service,
-            action    = args.action,
-            user      = args.user,
-            template  = args.template,
-            language  = args.language,
-            logger    = logger,
-            forceroot = args.forceroot,
-            admin     = args.admin,
+            apps            = args.apps if args.apps else [],
+            service         = args.service,
+            action          = args.action,
+            user            = args.user,
+            template        = args.template,
+            language        = args.language,
+            logger          = logger,
+            forceroot       = args.forceroot,
+            no_check        = no_check,
+            no_check_type   = no_check_type
         )
     except:
         message = (
