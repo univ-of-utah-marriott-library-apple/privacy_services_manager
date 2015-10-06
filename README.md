@@ -79,10 +79,19 @@ For a brief tutorial, skip ahead to the [Simple Usage Walkthrough](#simple-usage
 | `-n`, `--no-log` | Redirects logging to standard output (stdout, i.e. the console). |
 | `--template` | Modify privacy services for Apple's User Template. Only applies to certain services. |
 | `--forceroot` | Force the script to allow the creation/modification of the root user's own TCC database file. |
-| `--admin` | Enable administrative override to modify services for non-bundled applications. This is *NOT* recommended as it can open unforseen vulnerabilities. |
+| `--no-check-bin` | Enable administrative override for binaries. (Equivalent to old `--admin`, which just invokes this flag.) |
+| `--no-check-app` | Enable administrative override for applications. |
 | `-l log`, `--log-dest log` | Redirect logging to the specified file. (This can be overridden by `--no-log`.) |
 | `-u user`, `--user user` | Modify privacy services for a specific user named "`user`". (Requires root privileges.) |
 | `--language lang` | When changing privacy services for the Apple's User Template, modify the `lang` template. (Apple provides many User Template folder for different languages.) |
+
+#### Administrative Override
+
+Administrative override allows you to modify services for non-bundled applications (such as binary programs used from the command line) or applications which maybe don't exist at execution time (useful for sysadmins looking to prematurely grant permissions to apps which are not yet installed on the system).
+
+Use `--no-check-app` for applications, and `--no-check-bin` for binaries. (This distinction is actually very important.)
+
+In general, most people will likely not need to use this feature.
 
 ### Actions
 
@@ -245,6 +254,8 @@ This is a reverse-chronological list of updates to this project. Any seemingly m
 
 | Date       | Version | Update                                                                                                                 |
 |------------|:-------:|------------------------------------------------------------------------------------------------------------------------|
+| 2015-10-06 | 1.7.0   | Modified the handling of administrative override so application bundles can be added manually                          |
+| 2015-10-02 | 1.6.11  | Adjusted the creation of user-specific TCC databases so they are owned by the appropriate user (not root).             |
 | 2015-07-31 | 1.6.10  | Fixed issues with 1.6.9 release that caused modifying the TCC database to result in errors.                            |
 | 2015-07-30 | 1.6.9   | Adjusted `--admin` implementation so bundled applications will still resolve correctly even if `--admin` is given.     |
 | 2015-07-27 | 1.6.8   | Implemented support for El Capitan to resolve #27.                                                                     |

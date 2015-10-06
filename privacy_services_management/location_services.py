@@ -22,12 +22,15 @@ class LSEdit(object):
         # do more stuff
         bar(baz)
     """
-    def __init__(self, logger, admin=False):
+    def __init__(self, logger, no_check=False, no_check_type=None):
         # Set the logger for output.
         self.logger = logger
     
         # Set the administrative override flag.
-        self.admin = admin
+        self.no_check = no_check
+        # Check what type of application we're adding.
+        if self.no_check and no_check_type == 'app':
+            raise RuntimeError("Location Services does not support adding applications with the `--no-check-app` flag.")
 
         # Only root may modify the Location Services system.
         if os.geteuid() != 0:
@@ -65,7 +68,7 @@ class LSEdit(object):
             return
         
         # If we're in admin mode, we can't look up the application as a bundle.
-        if self.admin:
+        if self.no_check:
             self.__insert_executable(target)
         else:
             self.__insert_app(target)
@@ -85,7 +88,7 @@ class LSEdit(object):
             self.logger.info("Globally disabled successfully.")
             return
         
-        if self.admin:
+        if self.no_check:
             name   = target
             target = 'com.apple.locationd.executable-{}'.format(target)
         else:
@@ -117,7 +120,7 @@ class LSEdit(object):
             self.logger.info("Globally disabled successfully.")
             return
 
-        if self.admin:
+        if self.no_check:
             name   = target
             target = 'com.apple.locationd.executable-{}'.format(target)
         else:

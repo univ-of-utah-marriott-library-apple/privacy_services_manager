@@ -35,11 +35,12 @@ class TCCEdit(object):
         self,
         service,
         logger,
-        user      = '',
-        template  = False,
-        lang      = 'English',
-        forceroot = False,
-        admin     = False,
+        user            = '',
+        template        = False,
+        lang            = 'English',
+        forceroot       = False,
+        no_check        = False,
+        no_check_type   = None
     ):
         # Set the logger for output.
         self.logger = logger
@@ -51,9 +52,18 @@ class TCCEdit(object):
         if not user:
             import getpass
             user = getpass.getuser()
+        self.user = user
         
         # Set the administrative override flag.
-        self.admin = admin
+        self.no_check = no_check
+        # Check what type of application we're adding.
+        if self.no_check:
+            if no_check_type == 'app':
+                self.type = 'app'
+            else:
+                self.type = 'bin'
+        else:
+            self.type = 'app'
 
         # Check the version of OS X before continuing; only Darwin versions 12
         # and above support the TCC database system.
@@ -77,7 +87,7 @@ class TCCEdit(object):
             # This is the beginning of the log entry. It'll be completed below.
             local_log_entry = ("Set to modify local permissions for the '{}' User Template at ".format(lang))
         else:
-            if user == 'root' and not forceroot:
+            if self.user == 'root' and not forceroot:
                 if available_services[service][1] != 'root':
                     # Prevent the root user from creating or modifying their own
                     # local TCC database. This is to prevent confusion. The file
@@ -105,21 +115,21 @@ command with the `--forceroot` option:
                 else:
                     self.local_path = None
             else:
-                self.local_path = os.path.expanduser('~{}/Library/Application Support/com.apple.TCC/TCC.db'.format(user))
+                self.local_path = os.path.expanduser('~{}/Library/Application Support/com.apple.TCC/TCC.db'.format(self.user))
                 
                 # This is the beginning of the log entry. It'll be completed
                 # below.
-                local_log_entry = ("Set to modify local permissions for user '{}' at ".format(user))
+                local_log_entry = ("Set to modify local permissions for user '{}' at ".format(self.user))
 
         # Check the user didn't supply a bad username.
         if self.local_path and not self.local_path.startswith('/'):
             # The path to the home directory of 'user' couldn't be found by the
             # system. Maybe the user exists but isn't registered as a user?
             # Try looking in /Users/ just to see:
-            if os.path.isdir('/Users/{}'.format(user)):
-                self.local_path = ('/Users/{}/Library/Application Support/com.apple.TCC/TCC.db'.format(user))
+            if os.path.isdir('/Users/{}'.format(self.user)):
+                self.local_path = ('/Users/{}/Library/Application Support/com.apple.TCC/TCC.db'.format(self.user))
             else:
-                raise ValueError("Invalid username supplied: " + user)
+                raise ValueError("Invalid username supplied: {}".format(self.user))
 
         if self.local_path:
             self.logger.info(local_log_entry + "'" + self.local_path + "'.")
@@ -130,13 +140,13 @@ command with the `--forceroot` option:
         if os.geteuid() == 0 and not os.path.exists(self.root_path):
             self.__create(self.root_path)
         if self.local_path and not os.path.exists(self.local_path):
-            if (user == 'root' and forceroot) or user != 'root':
+            if (self.user == 'root' and forceroot) or self.user != 'root':
                 self.__create(self.local_path)
 
         # Check there is write access to user's local TCC database.
         if self.local_path and not os.access(self.local_path, os.W_OK):
-            if (user == 'root' and forceroot) or user != 'root':
-                raise ValueError("You do not have permission to modify {}'s TCC database.".format(user))
+            if (self.user == 'root' and forceroot) or self.user != 'root':
+                raise ValueError("You do not have permission to modify {}'s TCC database.".format(self.user))
 
         # Create the connections.
         # Only root may modify the global TCC database.
@@ -162,16 +172,17 @@ command with the `--forceroot` option:
             return
         
         # If not using admin override mode, look up a bundle identifier.
-        client_type = 0
-        try:
-            target = AppInfo(target).bid
-        except ValueError:
-            if self.admin:
-                target = os.path.abspath(target)
-                # We'll treat this as a command line executable.
+        if self.no_check:
+            # We get the client type from the no_check_type.
+            if self.type == 'bin':
                 client_type = 1
+            elif self.type == 'app':
+                client_type = 0
             else:
-                raise
+                raise ValueError("Using no-check administrative override without a specified no-check type.")
+        else:
+            target = AppInfo(target).bid
+            client_type = 0
         
         # If the service was not specified, get the original.
         if service is None and self.service:
@@ -234,13 +245,8 @@ command with the `--forceroot` option:
             return
         
         # If not using admin override mode, look up a bundle identifier.
-        try:
+        if not self.no_check:
             target = AppInfo(target).bid
-        except ValueError:
-            if self.admin:
-                target = os.path.abspath(target)
-            else:
-                raise
         
         # If the service was not specified, get the original.
         if service is None and self.service:
@@ -287,16 +293,17 @@ command with the `--forceroot` option:
             return
         
         # If not using admin override mode, look up a bundle identifier.
-        client_type = 0
-        try:
-            target = AppInfo(target).bid
-        except ValueError:
-            if self.admin:
-                target = os.path.abspath(target)
-                # We'll treat this as a command line executable.
+        if self.no_check:
+            # We get the client type from the no_check_type.
+            if self.type == 'bin':
                 client_type = 1
+            elif self.type == 'app':
+                client_type = 0
             else:
-                raise
+                raise ValueError("Using no-check administrative override without a specified no-check type.")
+        else:
+            target = AppInfo(target).bid
+            client_type = 0
         
         # If the service was not specified, get the original.
         if service is None and self.service:
@@ -347,12 +354,23 @@ command with the `--forceroot` option:
         
         :param path: where to build the database
         """
+        # We need the user's ID and group ID to re-own the directory.
+        from pwd import getpwnam
+        uid = getpwnam(self.user).pw_uid
+        gid = getpwnam(self.user).pw_gid
 
         self.logger.info("TCC.db file was expected at '{}' but was not found. Creating new TCC.db file...".format(path))
 
         # Make sure our directory tree exists.
+        local_created = False
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path), int('700', 8))
+            # If the user isn't root and we're adjusting their local database,
+            # we'll fix some permissions.
+            if self.user != 'root' and path == self.local_path:
+                local_created = True
+                database_dir = os.path.dirname(self.local_path)
+                os.chown(database_dir, uid, gid)
 
         # Form an SQL connection with the file.
         connection = sqlite3.connect(path)
@@ -428,6 +446,10 @@ command with the `--forceroot` option:
         connection.close()
 
         self.logger.info("TCC.db file created successfully.")
+        
+        # The local database was created, so make sure permissions are set.
+        if local_created:
+            os.chown(self.local_path, uid, gid)
 
     def __enter__(self):
         """
