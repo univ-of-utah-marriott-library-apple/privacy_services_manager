@@ -35,11 +35,12 @@ class TCCEdit(object):
         self,
         service,
         logger,
-        user      = '',
-        template  = False,
-        lang      = 'English',
-        forceroot = False,
-        admin     = False,
+        user            = '',
+        template        = False,
+        lang            = 'English',
+        forceroot       = False,
+        no_check        = False,
+        no_check_type   = None
     ):
         # Set the logger for output.
         self.logger = logger
@@ -54,7 +55,15 @@ class TCCEdit(object):
         self.user = user
         
         # Set the administrative override flag.
-        self.admin = admin
+        self.no_check = no_check
+        # Check what type of application we're adding.
+        if self.no_check:
+            if no_check_type == 'app':
+                self.type = 'app'
+            else:
+                self.type = 'bin'
+        else:
+            self.type = 'app'
 
         # Check the version of OS X before continuing; only Darwin versions 12
         # and above support the TCC database system.
@@ -163,16 +172,17 @@ command with the `--forceroot` option:
             return
         
         # If not using admin override mode, look up a bundle identifier.
-        client_type = 0
-        try:
-            target = AppInfo(target).bid
-        except ValueError:
-            if self.admin:
-                target = os.path.abspath(target)
-                # We'll treat this as a command line executable.
+        if self.no_check:
+            # We get the client type from the no_check_type.
+            if self.type == 'bin':
                 client_type = 1
+            elif self.type == 'app':
+                client_type = 0
             else:
-                raise
+                raise ValueError("Using no-check administrative override without a specified no-check type.")
+        else:
+            target = AppInfo(target).bid
+            client_type = 0
         
         # If the service was not specified, get the original.
         if service is None and self.service:
@@ -235,13 +245,8 @@ command with the `--forceroot` option:
             return
         
         # If not using admin override mode, look up a bundle identifier.
-        try:
+        if not self.no_check:
             target = AppInfo(target).bid
-        except ValueError:
-            if self.admin:
-                target = os.path.abspath(target)
-            else:
-                raise
         
         # If the service was not specified, get the original.
         if service is None and self.service:
@@ -288,16 +293,17 @@ command with the `--forceroot` option:
             return
         
         # If not using admin override mode, look up a bundle identifier.
-        client_type = 0
-        try:
-            target = AppInfo(target).bid
-        except ValueError:
-            if self.admin:
-                target = os.path.abspath(target)
-                # We'll treat this as a command line executable.
+        if self.no_check:
+            # We get the client type from the no_check_type.
+            if self.type == 'bin':
                 client_type = 1
+            elif self.type == 'app':
+                client_type = 0
             else:
-                raise
+                raise ValueError("Using no-check administrative override without a specified no-check type.")
+        else:
+            target = AppInfo(target).bid
+            client_type = 0
         
         # If the service was not specified, get the original.
         if service is None and self.service:
