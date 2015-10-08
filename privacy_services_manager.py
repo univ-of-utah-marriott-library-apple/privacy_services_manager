@@ -240,13 +240,15 @@ if __name__ == '__main__':
     if args.no_check_app and args.no_check_bin:
         parser.error("Cannot give both --no-check-app and --no-check-bin.")
     
-    no_check_type = None
     if args.no_check_app:
         no_check = True
         no_check_type = 'app'
-    if args.no_check_bin:
+    elif args.no_check_bin:
         no_check = True
         no_check_type = 'bin'
+    else:
+        no_check = False
+        no_check_type = None
         
     # Output some information.
     output = (
