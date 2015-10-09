@@ -361,16 +361,38 @@ command with the `--forceroot` option:
 
         self.logger.info("TCC.db file was expected at '{}' but was not found. Creating new TCC.db file...".format(path))
 
-        # Make sure our directory tree exists.
-        local_created = False
-        if not os.path.exists(os.path.dirname(path)):
-            os.makedirs(os.path.dirname(path), int('700', 8))
-            # If the user isn't root and we're adjusting their local database,
-            # we'll fix some permissions.
+        # Make sure our directory tree exists properly.
+        chown_database = False
+        # Check for existence of
+        #   .../Library/Application Support/com.apple.TCC/TCC.db
+        if not os.path.isfile(path):
+            database_dir    = os.path.dirname(path)
+            app_support_dir = os.path.dirname(database_dir)
+            # Let's only bother with user permissions if this isn't a folder
+            # owned by root.
             if self.user != 'root' and path == self.local_path:
-                local_created = True
-                database_dir = os.path.dirname(self.local_path)
-                os.chown(database_dir, uid, gid)
+                # We'll have to modify the permissions on 'TCC.db' later.
+                chown_database = True
+                # Check existence of
+                #   .../Library/Application Support/com.apple.TCC/
+                if not os.path.isdir(database_dir):
+                    # Check existence of
+                    #   .../Library/Application Support/
+                    if not os.path.isdir(app_support_dir):
+                        # Check that the 'Library' folder exists.
+                        if not os.path.isdir(os.path.dirname(app_support_dir)):
+                            # There's no 'Library' folder? Something isn't right.
+                            raise RuntimeError("No 'Library' directory found for database: {}".format(path))
+                        # Create and chown 'Application Support' folder.
+                        os.mkdir(app_support_dir, int('700', 8))
+                        os.chown(app_support_dir, uid, gid)
+                    # Create and chown the 'com.apple.TCC' folder.
+                    os.mkdir(database_dir, int('700', 8))
+                    os.chown(database_dir, uid, gid)
+            else:
+                # We're not dealing with a specific user's directory, so just
+                # make the parent directories as needed and ignore permissions.
+                os.makedirs(os.path.dirname(path), int('700', 8))
 
         # Form an SQL connection with the file.
         connection = sqlite3.connect(path)
@@ -448,7 +470,7 @@ command with the `--forceroot` option:
         self.logger.info("TCC.db file created successfully.")
         
         # The local database was created, so make sure permissions are set.
-        if local_created:
+        if chown_database:
             os.chown(self.local_path, uid, gid)
 
     def __enter__(self):
