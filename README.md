@@ -254,6 +254,8 @@ This is a reverse-chronological list of updates to this project. Any seemingly m
 
 | Date       | Version | Update                                                                                                                 |
 |------------|:-------:|------------------------------------------------------------------------------------------------------------------------|
+| 2015-10-09 | 1.7.2   | Adjusted the creation of necessary directories in users' home folders when creating a TCC.db file.                     |
+| 2015-10-08 | 1.7.1   | Fixed an ordering mistake which would cause errors when the script was run without administrative override.            |
 | 2015-10-06 | 1.7.0   | Modified the handling of administrative override so application bundles can be added manually                          |
 | 2015-10-02 | 1.6.11  | Adjusted the creation of user-specific TCC databases so they are owned by the appropriate user (not root).             |
 | 2015-07-31 | 1.6.10  | Fixed issues with 1.6.9 release that caused modifying the TCC database to result in errors.                            |
